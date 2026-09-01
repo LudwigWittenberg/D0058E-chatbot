@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot App — LLM Chat with Memory</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header bar -->
+        <header class="header-bar">
+            <div class="header-top">
+                <h1 class="header-title">💬 Chatbot App — LLM Chat with Memory</h1>
+                <div class="header-controls">
+                    <a href="/settings" class="settings-link" aria-label="Settings">⚙️ Settings</a>
+                </div>
+            </div>
+            <!-- Tab navigation -->
+            <nav class="tab-nav" aria-label="Main navigation">
+                <button class="tab-btn active" data-tab="overview-tab">📋 Overview</button>
+                <button class="tab-btn" data-tab="chat-tab">💬 Chat</button>
+            </nav>
+        </header>
+
+        <!-- Tab 1: Overview (sidebar + content) -->
+        <main class="tab-content active" id="overview-tab">
+            <div class="orch-layout">
+                <aside class="orch-sidebar">
+                    <h3 class="orch-sidebar-title">Topics</h3>
+                    <nav class="orch-nav" aria-label="Overview topics">
+                        <button class="orch-link active" data-section="overview-intro">Introduction: LLM for dummies</button>
+                        <button class="orch-link" data-section="overview-step1">  ↳ Step 1: Predict the Next Word</button>
+                        <button class="orch-link" data-section="overview-step2">  ↳ Step 2: Semantic Vectors</button>
+                        <button class="orch-link" data-section="overview-step3">  ↳ Step 3: Neural Predictor</button>
+                        <button class="orch-link" data-section="overview-step4">  ↳ Step 4: Self-Attention</button>
+                        <button class="orch-link" data-section="overview-step5">  ↳ Step 5: Real Transformer</button>
+                        <button class="orch-link" data-section="overview-step6">  ↳ Step 6: Inference & Decoding</button>
+                        <button class="orch-link" data-section="overview-step7">  ↳ Step 7: Llama & Ollama</button>
+                        <button class="orch-link" data-section="lab-instructions">Lab Instructions</button>
+                        <button class="orch-link" data-section="lab-task11">  ↳ Task 1.1: Multi-Turn Chat</button>
+                        <button class="orch-link" data-section="lab-task12">  ↳ Task 1.2: Temperature</button>
+                        <button class="orch-link" data-section="lab-task13">  ↳ Task 1.3: System Prompts</button>
+                        <button class="orch-link" data-section="lab-task14">  ↳ Task 1.4: Test via API</button>
+                        <button class="orch-link" data-section="lab-task15">  ↳ Task 1.5: Memory Management</button>
+                        <button class="orch-link" data-section="lab-task16">  ↳ Task 1.6: Streaming (Bonus)</button>
+                        <button class="orch-link" data-section="lab-deliverables">  ↳ Deliverables &amp; Grading</button>
+                    </nav>
+                </aside>
+                <div class="orch-content">
+                    <article class="orch-section active" id="overview-intro">
+                        <h2>Introduction: LLM for dummies</h2>
+                        <p>This section explains <strong>how Large Language Models work</strong> — from first principles to the running model on your machine. Understanding these internals helps you make better decisions when building chatbot applications: choosing models, tuning temperature, managing context windows, and understanding why certain prompts work better than others.</p>
+
+                        <h3>What you'll learn in 7 steps</h3>
+                        <table class="orch-table">
+                            <thead><tr><th>Step</th><th>Concept</th><th>Why it matters for your chatbot</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>1</strong></td><td>Predict the next word</td><td>The fundamental task your chatbot performs — everything reduces to this</td></tr>
+                                <tr><td><strong>2</strong></td><td>Semantic vectors</td><td>How the model understands that "coffee" and "tea" are related — why similar prompts give similar responses</td></tr>
+                                <tr><td><strong>3</strong></td><td>Neural predictor</td><td>The weight matrices that store the model's knowledge — why bigger models are "smarter"</td></tr>
+                                <tr><td><strong>4</strong></td><td>Self-attention</td><td>How the model reads your entire prompt and focuses on relevant parts — why prompt wording matters so much</td></tr>
+                                <tr><td><strong>5</strong></td><td>Full Transformer</td><td>The complete architecture — why models have billions of parameters and need GPUs</td></tr>
+                                <tr><td><strong>6</strong></td><td>Inference & decoding</td><td>How text is generated token-by-token — why temperature and top-p control creativity, why responses take time</td></tr>
+                                <tr><td><strong>7</strong></td><td>Llama & Ollama</td><td>What you actually downloaded and what happens when you send a message — connecting theory to practice</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>How this connects to the chatbot app</h3>
+                        <p>Every feature you'll build in this lab maps directly to these internals:</p>
+                        <ul>
+                            <li><strong>Personas</strong> (system prompts) — work because attention (Step 4) lets the system message influence every generated token</li>
+                            <li><strong>Temperature setting</strong> — directly controls the softmax sharpness in Step 6</li>
+                            <li><strong>Context window limits</strong> — the KV cache (Step 6) has finite memory; this is why you need memory management</li>
+                            <li><strong>Server-side memory</strong> — solves the problem that LLMs are stateless (Step 1); the server must explicitly re-send history</li>
+                            <li><strong>Token counting</strong> — matters because the model processes tokens, not words (Step 7 tokenizer)</li>
+                        </ul>
+
+                        <div class="orch-callout">
+                            <strong>Navigation:</strong> Use the subtopics (↳ Step 1 through ↳ Step 7) in the sidebar to explore each concept. You can read them in order or jump to any step that interests you.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="overview-step1">
+                        <h2>Step 1: The Problem — Predict the Next Word</h2>
+                        <p>At its core, every language model solves one deceptively simple problem:</p>
+                        <div class="orch-callout">
+                            <strong>Given a sequence of words, predict the next word.</strong>
+                        </div>
+                        <p>That's it. Every chatbot response, every code completion, every AI-generated email — it all reduces to predicting one word at a time, over and over. ChatGPT doesn't "think" or "plan" — it just picks the most likely next word, appends it, and repeats.</p>
+
+                        <h3>Humans Do This Effortlessly</h3>
+                        <p>You already solve this problem thousands of times per day without noticing:</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Sequence</th><th>You predict...</th></tr></thead>
+                            <tbody>
+                                <tr><td>"I drink my morning ..."</td><td>coffee / tea</td></tr>
+                                <tr><td>"New ..."</td><td>York</td></tr>
+                                <tr><td>"The chicken didn't cross the road because it ..."</td><td>was too tired</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>First Attempt: Count Word Sequences (n-grams)</h3>
+                        <p>The simplest machine approach: look at millions of documents, count how often word sequences appear, then estimate "what comes next?" from those counts.</p>
+                        <p>An <strong>n-gram</strong> is just a sequence of n consecutive words:</p>
+                        <ul>
+                            <li><strong>2-gram (bigram):</strong> "New York"</li>
+                            <li><strong>5-gram:</strong> "I drink my morning coffee"</li>
+                            <li><strong>10-gram:</strong> "I drink my morning coffee but airplane crashed and nobody ..." (rare/unseen)</li>
+                        </ul>
+                        <p>In plain English: count how many times you've seen "I drink my morning coffee" vs "I drink my morning tea" in all available texts. Whichever appears more often wins.</p>
+                        <p>The probability of the next word given previous words:</p>
+                        <p>$$P(\text{next word} \mid \text{previous words}) \approx \frac{\text{count(previous words + next word)}}{\text{count(previous words)}}$$</p>
+                        <p>The formal version (same idea, just with symbols for word positions):</p>
+                        <p>$$P(t_{i+1} \mid t_{i-n+1} \ldots t_i) \approx \frac{\#(t_{i-n+1} \ldots t_i,\; t_{i+1})}{\#(t_{i-n+1} \ldots t_i)}$$</p>
+
+                        <h3>The Fatal Flaw: Sparsity</h3>
+                        <p>This counting trick works for short, common phrases. But for longer or unusual sentences, the count is zero — you've never seen that exact sequence before:</p>
+                        <ul>
+                            <li>"I drink my morning" → appears in many texts ✓</li>
+                            <li>"I drink my morning coffee but the airplane crashed and nobody" → has never been written before ✗</li>
+                        </ul>
+                        <div class="orch-callout">
+                            <strong>The fundamental problem:</strong> most sentences have never been written before. You can't count what doesn't exist. Even the entire internet isn't big enough to contain every possible 10-word sequence.
+                        </div>
+
+                        <h3>What Humans Use (That Simple Counting Can't Capture)</h3>
+                        <p>When you predict the next word, you're not searching a database of memorized sentences. You use three types of knowledge:</p>
+
+                        <h4>1. World Knowledge — You understand cause and effect</h4>
+                        <pre class="orch-code"><code>"If you drop a glass on a stone floor, it will ..."  → "shatter" / "break"</code></pre>
+                        <p>You know glass is fragile and stone is hard. No amount of word counting captures this physical reasoning — you need to <em>understand the world</em>.</p>
+
+                        <h4>2. Grammar — You know what type of word fits</h4>
+                        <pre class="orch-code"><code>"The device that I bought yesterday and returned today was ..."  → expects adjective: "defective", "broken", "faulty"</code></pre>
+                        <p>You know "was ..." requires an adjective here, even if you've never seen this particular sentence. Grammar gives you constraints.</p>
+
+                        <h4>3. Meaning — You group words by category</h4>
+                        <pre class="orch-code"><code>"I drink my morning coffee, but my friend drinks morning ..."  → expects similar beverage: "tea"</code></pre>
+                        <p>You know "coffee" and "tea" belong to the same group (beverages). The parallel sentence structure tells you another beverage should go here.</p>
+
+                        <h3>The Challenge for Language Models</h3>
+                        <p>A good language model needs all three: world knowledge, grammar, and meaning. Simple counting gives you none of them. This is why we need neural networks — they can <em>learn</em> these patterns from data.</p>
+
+                        <table class="orch-table">
+                            <thead><tr><th>Approach</th><th>Strength</th><th>Weakness</th></tr></thead>
+                            <tbody>
+                                <tr><td>N-gram counting</td><td>Simple, fast, works for common phrases</td><td>Fails on long/rare sequences (sparsity)</td></tr>
+                                <tr><td>Human prediction</td><td>Uses grammar + meaning + world knowledge</td><td>Can't scale to millions of documents</td></tr>
+                                <tr><td>Neural language models</td><td>Learn patterns that generalize</td><td>Need massive data and compute</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="orch-callout">
+                            <strong>Next step:</strong> How do we represent words so a computer can work with their <em>meaning</em>, not just their spelling?
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="overview-step2">
+                        <h2>Step 2: Semantic Vectors of Words</h2>
+                        <p>The key idea: instead of treating words as arbitrary labels (word #4523 = "cat"), we represent each word as a <strong>list of numbers</strong> (a vector) that encodes its meaning. Think of it as GPS coordinates — but for meaning rather than location.</p>
+
+                        <img src="{{ url_for('static', filename='images/Semantic_Vectors_of_Words.png') }}" alt="Semantic vectors of words in 2D space" style="max-width:100%; border-radius:8px; margin:16px 0;">
+
+                        <p>In this simplified 2D picture, words are placed on a map where the horizontal axis represents gender and the vertical axis represents age. Words with similar meanings are close together. "Man" and "woman" are at the same height (both adults) but differ horizontally (gender). This <strong>geometric layout encodes meaning</strong>.</p>
+
+                        <img src="{{ url_for('static', filename='images/Semantic_Vectors_of_Words_w_vectors.png') }}" alt="Semantic vectors shown as arrows from origin" style="max-width:100%; border-radius:8px; margin:16px 0;">
+
+                        <p>Each word is represented as an <strong>arrow</strong> (vector) from the origin. Two arrows pointing in a similar direction mean similar words. "Man" and "grandfather" point roughly the same way (both male). "Boy" and "girl" point in different directions (opposite gender).</p>
+
+                        <p>Real word vectors have hundreds of dimensions (not just 2) — capturing many properties at once: topic, formality, tense, sentiment, and more.</p>
+
+                        <h3>Core Definitions</h3>
+                        <p>A <strong>vector</strong> is simply a list of numbers. If the list has <em>d</em> numbers, we call it a "d-dimensional vector":</p>
+                        <p>$$\mathbf{a} = (a_1, a_2, \ldots, a_d) \in \mathbb{R}^d$$</p>
+
+                        <h4>Dot Product — Measuring Similarity</h4>
+                        <p>The <strong>dot product</strong> is the simplest way to ask "how similar are these two vectors?" You multiply matching positions and add up:</p>
+                        <p>$$\langle \mathbf{a}, \mathbf{b} \rangle = \sum_{k=1}^{d} a_k \cdot b_k = \text{sim}(\mathbf{a}, \mathbf{b})$$</p>
+                        <p>Large result = vectors are similar. Zero = unrelated. Negative = opposite.</p>
+
+                        <h4>Binary Vector Examples</h4>
+                        <p>With simple 0/1 vectors, the dot product just counts how many positions match:</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Vectors</th><th>sim(a,b)</th><th>Interpretation</th></tr></thead>
+                            <tbody>
+                                <tr><td>a=(1,0,1,0,1), b=(0,1,0,1,0)</td><td>0</td><td>Nothing in common</td></tr>
+                                <tr><td>c=(1,0,1,1,1), d=(1,1,1,0,1)</td><td>3</td><td>Share 3 features — quite similar</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Cosine Similarity — Direction Matters, Not Length</h4>
+                        <p><strong>Cosine similarity</strong> checks if two arrows point the same direction, regardless of how long they are:</p>
+                        <p>$$\cos(\mathbf{a}, \mathbf{b}) = \frac{\langle \mathbf{a}, \mathbf{b} \rangle}{|\mathbf{a}| \cdot |\mathbf{b}|}$$</p>
+                        <p>where $|\mathbf{a}| = \sqrt{\sum_k a_k^2}$ is the length of the arrow.</p>
+                        <p>Result is always between $-1$ and $+1$:</p>
+                        <ul>
+                            <li>$+1$ → same direction (identical meaning)</li>
+                            <li>$0$ → perpendicular (unrelated)</li>
+                            <li>$-1$ → opposite direction (opposite meaning)</li>
+                        </ul>
+
+                        <h4>Distance vs. Similarity</h4>
+                        <p>You can also measure how far apart two vectors are (Euclidean distance). The connection is simple — high similarity = small distance:</p>
+                        <p>$$|\mathbf{a} - \mathbf{b}|^2 = |\mathbf{a}|^2 + |\mathbf{b}|^2 - 2\langle \mathbf{a}, \mathbf{b} \rangle$$</p>
+
+                        <h3>Geometric Intuition</h3>
+
+                        <img src="{{ url_for('static', filename='images/Vectors_Geometry_Intuition.png') }}" alt="Vector geometry: cosine similarity and addition" style="max-width:100%; border-radius:8px; margin:16px 0;">
+
+                        <table class="orch-table">
+                            <thead><tr><th>Configuration</th><th>Cosine</th><th>Meaning</th></tr></thead>
+                            <tbody>
+                                <tr><td>Arrows point same direction</td><td>cos ≈ +0.9</td><td>Very similar words</td></tr>
+                                <tr><td>Arrows at right angles</td><td>cos = 0</td><td>Unrelated words</td></tr>
+                                <tr><td>Arrows point opposite</td><td>cos ≈ −0.8</td><td>Opposite meanings</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Why Vector Arithmetic Works for Analogies</h4>
+                        <p>Because meaning is encoded as direction, you can do "meaning arithmetic":</p>
+                        <p>$$\text{sim}(\mathbf{a},\; \mathbf{a}+\mathbf{b}+\mathbf{c}) = \text{sim}(\mathbf{a},\mathbf{a}) + \text{sim}(\mathbf{a},\mathbf{b}) + \text{sim}(\mathbf{a},\mathbf{c})$$</p>
+                        <p>This is why $\text{vec}(\text{king}) - \text{vec}(\text{man}) + \text{vec}(\text{woman}) \approx \text{vec}(\text{queen})$ works — the "male" direction is subtracted, the "female" direction is added, landing near "queen".</p>
+
+                        <div class="orch-callout">
+                            <strong>Why this matters:</strong> Word vectors turn 200,000 unrelated word labels into a space where <em>meaning is distance</em> and <em>analogy is arithmetic</em>. This is the foundation that lets neural networks generalize — if it learns something about "coffee," it automatically applies to "tea" because they're nearby in vector space.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="overview-step3">
+                        <h2>Step 3: The Neural Next-Word Predictor</h2>
+
+                        <h3>The Idea</h3>
+                        <p>Now we combine Steps 1 and 2: build a system that uses word vectors to predict the next word. The setup:</p>
+                        <ul>
+                            <li><strong>Vocabulary:</strong> 200,000 words/tokens (every word the model knows)</li>
+                            <li><strong>Embedding table E:</strong> a lookup table that gives each word its vector (its "meaning coordinates")</li>
+                            <li><strong>Prompt vector p:</strong> add up all the input word vectors — this represents the overall meaning of what you typed</li>
+                            <li><strong>Weight matrix W:</strong> a collection of "prototype" vectors, one for each word — representing "what prompts typically look like before this word"</li>
+                        </ul>
+                        <p>The prediction process in plain English: look up vectors for each input word, add them up into one summary vector, then find which word's prototype is most similar to that summary.</p>
+                        <p>$$t^{(k)} \mapsto \mathbf{x}^{(k)} = \mathbf{E}[:, k] \in \mathbb{R}^d$$</p>
+                        <p>$$\mathbf{p} = \mathbf{x}_1 + \mathbf{x}_2 + \ldots + \mathbf{x}_L \in \mathbb{R}^d$$</p>
+                        <p>$$s^{(k)} = \text{sim}(\mathbf{p}, \mathbf{w}^{(k)}) \quad \text{for each word } k$$</p>
+                        <p>$$\hat{y} = \text{argmax}_k \; s_k \quad \rightarrow \text{ predicted next word}$$</p>
+
+                        <img src="{{ url_for('static', filename='images/Embeddings_Words.png') }}" alt="Embedding and Weight matrices" style="max-width:60%; border-radius:8px; margin:16px 0;">
+                        <p>Both E and W are big tables of numbers: d rows (vector dimensions) × 200,000 columns (one per word). Each column is a word's vector.</p>
+
+                        <h3>Forward Pass (How Prediction Works)</h3>
+                        <img src="{{ url_for('static', filename='images/ForwardPass.png') }}" alt="Forward pass diagram" style="max-width:50%; border-radius:8px; margin:16px 0;">
+                        <ol>
+                            <li><strong>Words → IDs:</strong> Convert each word to its number ("cat" → 4523)</li>
+                            <li><strong>Lookup:</strong> Get the vector for each word from table E</li>
+                            <li><strong>Add up:</strong> Sum all word vectors into one prompt vector p</li>
+                            <li><strong>Compare:</strong> Check similarity of p against all 200,000 word prototypes in W — highest score wins</li>
+                        </ol>
+
+                        <h3>Single-Layer Predictor</h3>
+                        <img src="{{ url_for('static', filename='images/Single_Layer_Predictor.png') }}" alt="Single-layer fully connected predictor" style="max-width:100%; border-radius:8px; margin:16px 0;">
+                        <p>This is one big matrix multiplication: the prompt vector p goes in, gets compared against every word's prototype vector in W, and 200,000 similarity scores come out. The word with the highest score is the prediction.</p>
+
+                        <h3>Training: Learn by Mistakes (Punish / Reward)</h3>
+                        <p>How does the model learn? Feed it millions of real sentences, let it guess the next word, and when it's wrong — adjust:</p>
+                        <p>If $\hat{y} \neq y$ (prediction wrong):</p>
+                        <p>$$\mathbf{W}[:, y] \leftarrow \mathbf{W}[:, y] + \eta \cdot \mathbf{p} \quad \text{(reward correct word — make more similar to prompt)}$$</p>
+                        <p>$$\mathbf{W}[:, \hat{y}] \leftarrow \mathbf{W}[:, \hat{y}] - \eta \cdot \mathbf{p} \quad \text{(punish wrong word — push away from prompt)}$$</p>
+                        <p>$\eta$ = learning rate (a small number like 0.001 — controls how big each adjustment is). After millions of such corrections, W ends up encoding "for each word, what context typically precedes it."</p>
+
+                        <h3>Multi-Layer Extension (Adding a Hidden Layer)</h3>
+                        <img src="{{ url_for('static', filename='images/MultiLayer_Extension.png') }}" alt="Multi-layer MLP with backpropagation" style="max-width:100%; border-radius:8px; margin:16px 0;">
+                        <p>A single matrix can only learn simple patterns. Adding a <strong>hidden layer</strong> in the middle lets the network combine features in complex ways (like recognizing "verb + object" patterns):</p>
+                        <p>Forward pass (how it predicts):</p>
+                        <p>$$\mathbf{h} = \sigma(\mathbf{W}_1 \cdot \mathbf{p}) \quad \text{(hidden layer: detect patterns, apply nonlinearity } \sigma \text{)}$$</p>
+                        <p>$$\text{Prob} = \text{softmax}(\mathbf{W}_2 \cdot \mathbf{h}) \quad \text{(convert to probabilities summing to 1)}$$</p>
+                        <p>$$\text{Cost} = -\log \text{Prob}_y \quad \text{(how wrong was the prediction?)}$$</p>
+                        <p>Backpropagation (how it learns — adjusting weights to reduce cost):</p>
+                        <p>$$\boldsymbol{\delta} = \text{Prob} - \mathbf{e}_y \quad \text{(error signal)}$$</p>
+                        <p>$$\frac{\partial \text{Cost}}{\partial \mathbf{W}_2} = \boldsymbol{\delta} \cdot \mathbf{h}^T \quad \rightarrow \text{adjust output weights}$$</p>
+                        <p>$$\frac{\partial \text{Cost}}{\partial \mathbf{W}_1} = (\mathbf{W}_2^T \boldsymbol{\delta} \odot \sigma'(\mathbf{W}_1 \mathbf{p})) \cdot \mathbf{p}^T \quad \rightarrow \text{adjust hidden weights}$$</p>
+
+                        <div class="orch-callout">
+                            <strong>Key insight:</strong> After training on millions of examples, the word vectors in E <em>become</em> the semantic vectors from Step 2 — similar words end up with similar vectors, not because we told the model about similarity, but because predicting correctly <em>requires</em> grouping similar words together.
+                        </div>
+
+                        <h3>Understanding the Weight Matrices</h3>
+                        <p>The weight matrices store everything the model has learned. They <em>are</em> the model's knowledge — billions of numbers, adjusted by millions of training examples.</p>
+
+                        <h4>Single-Layer: W</h4>
+                        <p><strong>$\mathbf{W} \in \mathbb{R}^{d \times |\text{Voc}|}$</strong> — think of each column as a "wanted poster" for a word: "this is what a prompt looks like when I should be predicted next."</p>
+                        <ul>
+                            <li>To predict: compare the prompt against every column (every wanted poster)</li>
+                            <li>Best match wins</li>
+                            <li>Each column answers: "what context do I typically follow?"</li>
+                        </ul>
+                        <p>Parameter count: $d \times |\text{Voc}| = 4096 \times 200{,}000 = 819$ million numbers (just for this one table!)</p>
+
+                        <h4>Multi-Layer: W₁ and W₂</h4>
+                        <p>With two layers, the work splits into detecting patterns (W₁) and mapping patterns to words (W₂):</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Matrix</th><th>What it does</th><th>Analogy</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>W₁</strong></td><td>Input → Hidden: detect meaningful patterns</td><td>Like recognizing "this prompt is asking a question"</td></tr>
+                                <tr><td><strong>W₂</strong></td><td>Hidden → Output: map patterns to words</td><td>Like knowing "questions are followed by answers"</td></tr>
+                            </tbody>
+                        </table>
+                        <p><strong>Why two layers are better:</strong> a single layer can only draw straight-line boundaries between word groups. Two layers with a nonlinearity σ between them can learn complex, curved boundaries — capturing subtle patterns like "this word fits here only if the subject was plural."</p>
+                    </article>
+
+                    <article class="orch-section" id="overview-step4">
+                        <h2>Step 4: ChatGPT's Self-Attention (From Simplified to Real)</h2>
+
+                        <h3>The Problem with Adding Everything Up</h3>
+                        <p>In Step 3, we summed all word vectors equally: p = x₁ + x₂ + ... + x_current. But this is like reading an entire paragraph and giving every word equal importance. In reality, when predicting the next word, some earlier words matter much more than others.</p>
+
+                        <h3>Attention: Focus on What Matters</h3>
+                        <img src="{{ url_for('static', filename='images/x_tockens.png') }}" alt="Token sequence" style="max-width:90%; border-radius:8px; margin:16px 0;">
+                        <p><strong>Attention</strong> replaces the equal sum with a <em>weighted</em> sum — each word gets an importance weight ($\alpha$). Most weights are near zero; only a few relevant words get high weights:</p>
+                        <p>$$\mathbf{c}_{\text{current}} = \alpha_1 \mathbf{x}_1 + \alpha_2 \mathbf{x}_2 + \ldots + \alpha_{\text{current}} \mathbf{x}_{\text{current}}$$</p>
+                        <p>$\alpha_j$ = "how much should we pay attention to word $j$?" Most $\alpha_j \approx 0$, only a few are large.</p>
+                        <p>How to compute $\alpha$: measure similarity between current position and each earlier word, then normalize (softmax makes them sum to 1):</p>
+                        <p>$$\boldsymbol{\alpha} = \text{softmax}(\mathbf{s}/\sqrt{d}) \quad \text{where } \mathbf{s} = (\text{sim}(\mathbf{q}, \mathbf{x}_1), \ldots, \text{sim}(\mathbf{q}, \mathbf{x}_{\text{current}}))$$</p>
+
+                        <img src="{{ url_for('static', filename='images/Only_few_earlier_words_get_large_a.png') }}" alt="Only few words get large attention" style="max-width:40%; border-radius:8px; margin:16px 0;">
+                        <p>In practice, only 2-3 earlier words typically get large weights — the model learns which words are relevant for each prediction.</p>
+
+                        <h3>Query, Key, Value — The Three Roles</h3>
+                        <p>The real Transformer doesn't compare raw word vectors. It first transforms each word into three different "views" — like asking three different questions about the same word:</p>
+                        <p>$$\mathbf{q}_i = \mathbf{x}_i \mathbf{W}^Q \quad \text{(query: "what am I looking for?")}$$</p>
+                        <p>$$\mathbf{k}_j = \mathbf{x}_j \mathbf{W}^K \quad \text{(key: "what do I contain?")}$$</p>
+                        <p>$$\mathbf{v}_j = \mathbf{x}_j \mathbf{W}^V \quad \text{(value: "what information do I carry?")}$$</p>
+                        <p>The attention weight tells how well word $j$ answers position $i$'s question:</p>
+                        <p>$$\alpha_{ij} = \text{softmax}\left(\frac{\text{sim}(\mathbf{q}_i, \mathbf{k}_j)}{\sqrt{d}}\right)$$</p>
+
+                        <h4>Context Vector — The Focused Summary</h4>
+                        <img src="{{ url_for('static', filename='images/context_vector.png') }}" alt="Context vector computation" style="max-width:90%; border-radius:8px; margin:16px 0;">
+                        <p>The context vector at position i is a weighted combination of relevant word values — like a personalized summary of the prompt for that specific position:</p>
+                        <p>$$\mathbf{c}_i = \sum_{j \leq i} \alpha_{ij} \cdot \mathbf{v}_j$$</p>
+
+                        <h3>The Attention Matrix</h3>
+                        <p>When we compute attention for all positions at once, we get a matrix where each row shows "who does this position pay attention to?":</p>
+                        <p>$$\mathbf{C} = \text{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d}}\right) \mathbf{V}$$</p>
+                        <img src="{{ url_for('static', filename='images/Attention_matrix.png') }}" alt="Attention matrix" style="max-width:100%; border-radius:8px; margin:16px 0;">
+
+                        <h3>Causal (Masked) Attention — No Peeking Ahead</h3>
+                        <img src="{{ url_for('static', filename='images/Casual_masked_attention.png') }}" alt="Causal masked attention" style="max-width:40%; border-radius:8px; margin:16px 0;">
+                        <p>When generating text, position 5 can only look at positions 1-5 (not position 6, which hasn't been generated yet). This is enforced by masking — zeroing out the "future" part of the attention matrix, making it triangular.</p>
+
+                        <h3>The Learned Transforms (Wᵠ, Wᴷ, Wⱽ)</h3>
+                        <p>These three matrices are learned during training. They determine what the model considers "relevant":</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Matrix</th><th>Role</th><th>Analogy</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Wᵠ</strong> (d×d)</td><td>Query transform</td><td>"What question does this position ask?"</td></tr>
+                                <tr><td><strong>Wᴷ</strong> (d×d)</td><td>Key transform</td><td>"What label does this word carry?"</td></tr>
+                                <tr><td><strong>Wⱽ</strong> (d×d)</td><td>Value transform</td><td>"What information does this word pass along?"</td></tr>
+                            </tbody>
+                        </table>
+
+                        <div class="orch-callout">
+                            <strong>Key insight:</strong> Attention lets the model dynamically decide which earlier words matter for each prediction — not a fixed rule, but learned from data. The same word "bank" will attend to different context depending on whether the text is about rivers or finance.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="overview-step5">
+                        <h2>Step 5: Real Transformer and Its Training — Lift Up</h2>
+                        <p>Step 4 showed one attention mechanism. The real Transformer scales this up into a repeating building block with three improvements: <strong>multiple attention heads</strong> (look for different things simultaneously), <strong>feed-forward layers</strong> (store factual knowledge), and <strong>residual connections</strong> (keep the original signal so nothing gets lost).</p>
+
+                        <h3>One Transformer Block</h3>
+                        <img src="{{ url_for('static', filename='images/Transformer_block.png') }}" alt="Transformer block" style="max-width:50%; border-radius:8px; margin:16px 0;">
+
+                        <h4>Input</h4>
+                        <p>A table of word vectors — one row per token in your prompt:</p>
+                        <p>$$\mathbf{X}^{\ell} \in \mathbb{R}^{L \times d_{\text{model}}} \quad \text{(e.g., 1000 tokens} \times \text{4096 dimensions)}$$</p>
+
+                        <h4>Self-Attention (with Layer Normalization)</h4>
+                        <p>First, normalize the vectors (keeps training stable), then compute attention. Each "head" looks for different patterns:</p>
+                        <p>$$\mathbf{Q}_h = \text{LN}(\mathbf{X}^{\ell}) \cdot \mathbf{W}_{Q,h}, \quad \mathbf{K}_h = \text{LN}(\mathbf{X}^{\ell}) \cdot \mathbf{W}_{K,h}, \quad \mathbf{V}_h = \text{LN}(\mathbf{X}^{\ell}) \cdot \mathbf{W}_{V,h}$$</p>
+                        <p>$$\mathbf{A}_h = \text{softmax}\left(\frac{\mathbf{Q}_h \mathbf{K}_h^T}{\sqrt{d_k}}\right), \quad \mathbf{O}_h = \mathbf{A}_h \mathbf{V}_h$$</p>
+
+                        <img src="{{ url_for('static', filename='images/Masked_attention.png') }}" alt="Masked attention matrix" style="max-width:35%; border-radius:8px; margin:16px 0;">
+
+                        <h4>Combine All Heads + Skip Connection</h4>
+                        <p>Concatenate outputs from all heads, then add back the original input (residual/skip connection — so information from earlier steps isn't lost):</p>
+                        <p>$$\text{Attn}(\mathbf{X}^{\ell}) = \text{Concat}(\mathbf{O}_1, \ldots, \mathbf{O}_H) \cdot \mathbf{W}_O$$</p>
+                        <p>$$\mathbf{Y} = \mathbf{X}^{\ell} + \text{Attn}(\mathbf{X}^{\ell}) \quad \leftarrow \text{skip connection}$$</p>
+
+                        <h4>Feed-Forward Network (FFN) — The Knowledge Store</h4>
+                        <p>Applied to each token independently. This is where factual knowledge lives (expand to wider dimension, apply nonlinearity, compress back):</p>
+                        <p>$$\text{FFN}(\mathbf{z}) = \mathbf{W}_2 \cdot \sigma(\mathbf{W}_1 \cdot \mathbf{z})$$</p>
+                        <p>$$\mathbf{X}^{\ell+1} = \mathbf{Y} + \text{FFN}(\text{LN}(\mathbf{Y})) \quad \leftarrow \text{another skip connection}$$</p>
+
+                        <h3>Multiple Heads — Look for Different Things at Once</h3>
+                        <img src="{{ url_for('static', filename='images/Multihead.png') }}" alt="Multi-head attention" style="max-width:100%; border-radius:8px; margin:16px 0;">
+                        <p>Each head has its own W_Q, W_K, W_V — so each head learns to focus on different relationships:</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Head</th><th>What it might specialize in</th></tr></thead>
+                            <tbody>
+                                <tr><td>Head 1</td><td>Grammar: "does the verb agree with the subject?"</td></tr>
+                                <tr><td>Head 2</td><td>Coreference: "what does 'it' refer to?"</td></tr>
+                                <tr><td>Head 3</td><td>Formatting: "are we inside a code block?"</td></tr>
+                                <tr><td>Head 4</td><td>Topic: "what is this paragraph about?"</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Stack Many Blocks Deep — Build Understanding Layer by Layer</h3>
+                        <p>A full model repeats this block N times (32-96 blocks in modern models). Each layer builds on the previous one, capturing increasingly complex patterns:</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Depth</th><th>What it captures</th><th>Analogy</th></tr></thead>
+                            <tbody>
+                                <tr><td>Layers 1–5</td><td>Syntax, word order</td><td>Spell-checking</td></tr>
+                                <tr><td>Layers 6–15</td><td>Phrase meaning, who-does-what</td><td>Sentence parsing</td></tr>
+                                <tr><td>Layers 16–30</td><td>Reasoning, facts, logic</td><td>Understanding</td></tr>
+                                <tr><td>Final layers</td><td>Formatting the output</td><td>Writing style</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Training — Learn by Reading the Internet</h3>
+                        <img src="{{ url_for('static', filename='images/Training.png') }}" alt="Training process" style="max-width:100%; border-radius:8px; margin:16px 0;">
+                        <p>The model reads trillions of tokens of text with one simple objective: predict the next token. Every mistake adjusts all weight matrices simultaneously (backpropagation):</p>
+                        <p>$$\text{Cost} = -\sum_{i=1}^{L} \log P(t_i \mid t_1, \ldots, t_{i-1})$$</p>
+                        <p>(Maximize the probability the model assigns to the actual next word.)</p>
+                        <p>All weight matrices in all layers get adjusted: $\mathbf{E}$ (word vectors), $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$ (attention), $\mathbf{W}_O$ (head merge), $\mathbf{W}_1, \mathbf{W}_2$ (FFN), plus normalization parameters.</p>
+                        <p>Scale: production LLMs range from a few billion to hundreds of billions of parameters. The course model (Llama-3.2-3B) sits at the small end — enough to run on a laptop, capable enough to see all the same patterns.</p>
+
+                        <div class="orch-callout">
+                            <strong>The full pipeline:</strong> Input tokens → Word vectors → [Transformer Block × N] → Normalize → Score all 200k words → Softmax → Pick next word. Each block: Normalize → Multi-Head Attention → Skip → Normalize → FFN → Skip.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="overview-step6">
+                        <h2>Step 6: Real Transformer at Work — Generation and Inference</h2>
+
+                        <p>Now the model is trained. How does it actually generate text? It works like a very fast typist that picks one word at a time: read what's been written so far, predict the next word, add it to the text, repeat.</p>
+
+                        <img src="{{ url_for('static', filename='images/prediction.png') }}" alt="Prefill, decode loop, and KV cache" style="max-width:100%; border-radius:8px; margin:16px 0;">
+
+                        <h3>From Prompt to Next Word</h3>
+                        <p>You type a prompt. The model processes all tokens at once (the "prefill" step) and produces a score for every word in its vocabulary (200,000 scores). Then softmax converts these into probabilities:</p>
+                        <p>$$\text{Prompt tokens } t_{1:k} \rightarrow \text{logits } \mathbf{z}_k \in \mathbb{R}^{|\text{Voc}|}$$</p>
+                        <p>$$P(\text{next word} \mid \text{prompt}) = \text{softmax}(\mathbf{z}_k)$$</p>
+                        <p>The whole response is generated one word at a time (autoregressive):</p>
+                        <p>$$P(\text{full text}) = P(\text{word}_1 \mid \text{prompt}) \times P(\text{word}_2 \mid \text{prompt}+\text{word}_1) \times \ldots$$</p>
+
+                        <h3>Choosing the Next Word — Decoding Strategies</h3>
+                        <p>Once we have probabilities, how do we pick? There are three common strategies:</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Strategy</th><th>How it works</th><th>Result</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Greedy</strong></td><td>Always pick the highest-probability word</td><td>Deterministic but can be repetitive/boring</td></tr>
+                                <tr><td><strong>Temperature</strong></td><td>Divide scores by T before softmax. T&gt;1 = more random; T&lt;1 = more focused</td><td>Controls creativity vs. predictability</td></tr>
+                                <tr><td><strong>Top-p</strong></td><td>Only consider the top words that cover p% of probability, sample among them</td><td>Avoids unlikely nonsense while staying creative</td></tr>
+                            </tbody>
+                        </table>
+                        <p>This is why the same prompt can give different answers — with temperature &gt; 0, the model randomly samples from probable next words rather than always picking the top one.</p>
+
+                        <h3>The Decode Loop</h3>
+                        <p>Generation is sequential — one word at a time:</p>
+                        <pre class="orch-code"><code>1) You type:  "The sentiment of 'I like Jackie Chan' is:"
+2) Model picks:  "positive"  (highest probability, or sampled)
+3) Append:  "... is: positive" → feed the whole thing back in → get next word
+4) Repeat until done (stop token or max length)</code></pre>
+
+                        <h3>Task Prompts — One Model, Many Tasks</h3>
+                        <p>The same model handles completely different tasks — you just phrase them as "complete this text":</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Task</th><th>How you prompt it</th></tr></thead>
+                            <tbody>
+                                <tr><td>Sentiment analysis</td><td>"The sentiment of 'I like Jackie Chan' is:"</td></tr>
+                                <tr><td>Q&amp;A</td><td>"Q: Who wrote 'The Origin of Species'? A:"</td></tr>
+                                <tr><td>Summarization</td><td>"TL;DR:" or "Summarize: ..."</td></tr>
+                                <tr><td>Translation</td><td>"Translate to Swedish: ..."</td></tr>
+                                <tr><td>Coding</td><td>"Write a Python function that ..."</td></tr>
+                            </tbody>
+                        </table>
+                        <p>No special mechanism per task — the model learned these patterns from seeing millions of similar examples during training.</p>
+
+                        <h3>KV Cache — Why It's Fast</h3>
+                        <p>Without optimization, generating word #100 would require re-processing all 99 previous words. The <strong>KV cache</strong> stores the keys and values from previous steps so they don't need to be recomputed:</p>
+                        <p>Per layer, store: $\mathbf{K}_{1:k}$ (keys for all past tokens) and $\mathbf{V}_{1:k}$ (values for all past tokens).</p>
+                        <p>For the next word ($k+1$):</p>
+                        <ol>
+                            <li>Only compute the NEW $\mathbf{q}_{k+1}, \mathbf{k}_{k+1}, \mathbf{v}_{k+1}$ for token $k+1$</li>
+                            <li>Compare new query against ALL cached keys (cheap — just one row)</li>
+                            <li>Append new key, value to cache</li>
+                            <li>Continue</li>
+                        </ol>
+                        <p>Result: generating each new word takes constant time regardless of how long the text already is.</p>
+
+                        <div class="orch-callout">
+                            <strong>Bottom line:</strong> The model doesn't "understand" or "think." It assigns probabilities to possible next words based on patterns it learned from reading trillions of words of human text. The prompt steers which patterns activate. Temperature controls how adventurous it is. The KV cache makes it fast. That's ChatGPT.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="overview-step7">
+                        <h2>Step 7: Llama, Model Formats & Ollama — What You Actually Installed</h2>
+
+                        <p>Steps 1–6 explained <em>how</em> a language model works. This step explains <em>what you downloaded</em> for the course — <code>Llama-3.2-3B-Instruct-Q4_K_M</code> — and what happens when you run it.</p>
+
+                        <h3>What Is Llama?</h3>
+                        <p><strong>Llama</strong> (Large Language Model Meta AI) is a family of open-weight Transformers from Meta. "Open-weight" means the trained parameters — all the $\mathbf{W}$, $\mathbf{E}$, $\mathbf{W}_Q$, $\mathbf{W}_K$, $\mathbf{W}_V$ matrices from Steps 3–5 — are publicly downloadable.</p>
+
+                        <table class="orch-table">
+                            <thead><tr><th>Property</th><th>Llama 3.2 (3B) — the course model</th></tr></thead>
+                            <tbody>
+                                <tr><td>Parameters</td><td>~3.2 billion</td></tr>
+                                <tr><td>Layers</td><td>28 Transformer blocks</td></tr>
+                                <tr><td>Model dimension ($d_{\text{model}}$)</td><td>3072</td></tr>
+                                <tr><td>Attention heads</td><td>24 (with 8 KV heads, grouped-query attention)</td></tr>
+                                <tr><td>Vocabulary</td><td>128,256 tokens</td></tr>
+                                <tr><td>Context window</td><td>128K tokens (course apps use 4096 to save RAM)</td></tr>
+                                <tr><td>Training data</td><td>~9 trillion tokens</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>What's Inside the Model File?</h3>
+                        <p>The download contains three things:</p>
+                        <ol>
+                            <li><strong>Weight matrices (99% of file size)</strong> — all the learned numbers from Steps 2–5:
+                                <ul>
+                                    <li>$\mathbf{E}$ — embedding table (128K word vectors)</li>
+                                    <li>$\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V, \mathbf{W}_O$ per layer — attention (Step 4)</li>
+                                    <li>$\mathbf{W}_1, \mathbf{W}_2$ per layer — FFN knowledge (Step 5)</li>
+                                    <li>LayerNorm parameters</li>
+                                </ul>
+                            </li>
+                            <li><strong>Tokenizer</strong> — dictionary converting text ↔ token IDs</li>
+                            <li><strong>Config</strong> — number of layers, dimensions, heads, etc.</li>
+                        </ol>
+
+                        <h3>Quantization — Making It Fit on Your Laptop</h3>
+                        <p>Full precision (16-bit) for a 3B model would need ~6 GB. <strong>Quantization</strong> rounds each weight to fewer bits, trading tiny quality loss for much smaller files:</p>
+                        <table class="orch-table">
+                            <thead><tr><th>Format</th><th>Bits per weight</th><th>File size (3B)</th><th>Quality</th></tr></thead>
+                            <tbody>
+                                <tr><td>FP16 (original)</td><td>16</td><td>~6 GB</td><td>Reference</td></tr>
+                                <tr><td>Q8_0</td><td>8</td><td>~3.4 GB</td><td>Negligible loss</td></tr>
+                                <tr><td><strong>Q4_K_M (yours)</strong></td><td>4</td><td><strong>~2 GB</strong></td><td>Barely noticeable</td></tr>
+                                <tr><td>Q2_K</td><td>2</td><td>~1.3 GB</td><td>Significant loss</td></tr>
+                            </tbody>
+                        </table>
+                        <p>The bundled server and Ollama both use <strong>GGUF</strong> format — a single file packaging weights + tokenizer + config.</p>
+
+                        <h3>What Ollama Does</h3>
+                        <p>Ollama is the <strong>inference engine</strong> — it loads the model file and runs Steps 3–6 on your hardware:</p>
+
+                        <pre class="orch-code"><code>Your text
+  → Tokenizer: "What is 5G?" → [3923, 374, 220, 20, 38, 30]
+  → Embedding lookup (Step 2: IDs → vectors)
+  → 32 Transformer blocks (Steps 4-5: attention + FFN)
+  → Softmax → probability distribution (Step 6)
+  → Sample with temperature/top-p (Step 6)
+  → Detokenize → return text
+  → Repeat (KV cache avoids recomputing past tokens)</code></pre>
+
+                        <h3>Mapping Your Commands to the Theory</h3>
+                        <table class="orch-table">
+                            <thead><tr><th>What you did</th><th>What it is (Steps 1–6)</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>brew install ollama</code></td><td>Installed the inference engine (runs Steps 3–6)</td></tr>
+                                <tr><td><code>ollama pull llama3.2:3b</code> (or the bundled server's auto-download)</td><td>Downloaded 3B trained weights in GGUF (result of Step 5 training)</td></tr>
+                                <tr><td><code>ollama serve</code></td><td>Started HTTP server that accepts prompts and runs inference</td></tr>
+                                <tr><td>temperature = 0.7</td><td>Adjusted decoding strategy (Step 6)</td></tr>
+                                <tr><td>num_ctx = 4096</td><td>KV cache size limit (Step 6) — trades memory for context length</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Why Local Matters</h3>
+                        <ul>
+                            <li><strong>Privacy</strong> — prompts never leave your machine</li>
+                            <li><strong>No API costs</strong> — unlimited usage</li>
+                            <li><strong>No rate limits</strong> — as fast as your hardware allows</li>
+                            <li><strong>Offline</strong> — works without internet</li>
+                            <li><strong>Customizable</strong> — adjust temperature, context, system prompts</li>
+                        </ul>
+
+                        <div class="orch-callout">
+                            <strong>The full picture:</strong> Meta trained a 32-layer Transformer on 15T tokens → published the weights → community quantized to 5 GB → you downloaded it → Ollama runs the forward pass on your CPU/GPU → you get ChatGPT-like responses locally. Everything from Steps 1–6 is happening inside that <code>ollama serve</code> process.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="lab-instructions">
+                        <h2>Lab 1: Chatbot Application — Prompt Engineering &amp; Conversation Management</h2>
+                        <p><strong>Course:</strong> AI-Powered Application Development with Local LLMs<br>
+                        <strong>Type:</strong> Individual or pair<br>
+                        <strong>Application:</strong> <code>chatbot-app</code> — <a href="http://localhost:8001">http://localhost:8001</a><br>
+                        <strong>Prerequisites:</strong> Lab 0 (Pre-Lab) completed</p>
+
+                        <h3>1. Goal</h3>
+                        <p>Build and customize a conversational AI chatbot by modifying its prompt engineering, persona system, and response delivery. You will work with a functioning Flask web application where the web layer (UI, routing) is already built — your job is to modify the AI logic in the <code>ai/</code> folder to change how the chatbot thinks, responds, and interacts.</p>
+
+                        <h3>2. Learning Outcomes</h3>
+                        <table class="orch-table">
+                            <thead><tr><th>#</th><th>Learning Outcome</th></tr></thead>
+                            <tbody>
+                                <tr><td>LO1</td><td>Explain how system prompts shape LLM behavior and design effective prompts for specific use cases</td></tr>
+                                <tr><td>LO2</td><td>Understand the persona switching architecture (backend → frontend) and extend it with custom personas</td></tr>
+                                <tr><td>LO3</td><td>Build a streaming response system using Server-Sent Events (SSE) for real-time token delivery</td></tr>
+                                <tr><td>LO4</td><td>Manage conversation history and understand the trade-offs of context window management</td></tr>
+                                <tr><td>LO5</td><td>Use Flask route definitions and REST API patterns to expose AI functionality</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>3. Application Architecture</h3>
+                        <pre class="orch-code"><code>chatbot-app/
+├── ai/                    ← YOU MODIFY THESE FILES
+│   ├── chat.py            Core chat logic (prompt construction, LLM calls)
+│   ├── prompts.py         System prompt templates and persona definitions
+│   ├── memory.py          Conversation history management
+│   └── models.py          LLM client creation and model selection
+├── web/                   ← PROVIDED (already wired up)
+│   ├── routes.py          Flask route definitions (includes /api/personas, persona in /chat)
+│   ├── static/css/        Stylesheets
+│   ├── static/js/chat.js  Chat UI logic (persona dropdown, message sending)
+│   └── templates/         HTML templates (persona dropdown in header)
+├── config.py              Configuration manager
+├── config.json            Runtime configuration (auto-generated)
+└── run.py                 Application entry point</code></pre>
+
+                        <p><strong>Key principle:</strong> You primarily modify files in <code>ai/</code>. The web layer is already wired up with a persona dropdown in the UI, a <code>GET /api/personas</code> endpoint, and persona support in <code>POST /chat</code>.</p>
+
+                        <h3>4. Setup</h3>
+                        <pre class="orch-code"><code>cd web-based-course/
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Ensure the LLM server is running (bundled server or Ollama)
+# Bundled: python server/server.py    Ollama: ollama serve
+
+# Start the chatbot app
+python chatbot-app/run.py</code></pre>
+
+                        <p>Open <a href="http://localhost:8001">http://localhost:8001</a> in your browser. Type a message and verify you get a response.</p>
+
+                        <div class="orch-callout">
+                            <strong>⚠️ IMPORTANT: Debug Mode (Auto-Reload)</strong><br><br>
+                            The app runs in Flask debug mode by default (<code>debug=True</code> in <code>run.py</code>). This means:<br>
+                            <ul>
+                                <li>When you save any <code>.py</code> file, Flask <strong>automatically restarts</strong> — no manual restart needed</li>
+                                <li>You'll see <code>* Restarting with stat</code> in the terminal after each file save</li>
+                                <li>If you introduce a syntax error, the reloader will show the error in the terminal — fix it and it recovers automatically</li>
+                                <li><strong>You do NOT need to stop and restart the app</strong> after modifying <code>ai/prompts.py</code>, <code>ai/memory.py</code>, or any other Python file</li>
+                            </ul>
+                            If for some reason auto-reload is not working, ensure you started the app with <code>python chatbot-app/run.py</code> (not via gunicorn or another WSGI server).<br><br>
+                            <strong>Start command (from the <code>web-based-course/</code> directory):</strong>
+                            <pre class="orch-code"><code>python chatbot-app/run.py</code></pre>
+                        </div>
+
+                        <h3>5. Tasks Overview</h3>
+                        <p>Use the subtopics in the sidebar to access detailed instructions for each task:</p>
+                        <ul>
+                            <li><strong>Task 1.1</strong> — Multi-turn chat: understand statelessness (★☆☆)</li>
+                            <li><strong>Task 1.2</strong> — Temperature experiment (★☆☆)</li>
+                            <li><strong>Task 1.3</strong> — Understand and modify system prompts / personas (★☆☆)</li>
+                            <li><strong>Task 1.4</strong> — Test personas via the API with curl (★☆☆)</li>
+                            <li><strong>Task 1.5</strong> — Conversation memory and context management (★★☆)</li>
+                            <li><strong>Task 1.6</strong> — Implement streaming responses (★★★, Optional/Bonus)</li>
+                        </ul>
+
+                        <h3>API Reference</h3>
+                        <table class="orch-table">
+                            <thead><tr><th>Endpoint</th><th>Method</th><th>Body</th><th>Response</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>/chat</code></td><td>POST</td><td><code>{"message": str, "history": list, "persona": str}</code></td><td><code>{"response": str, "model": str, "usage": dict}</code></td></tr>
+                                <tr><td><code>/chat/stream</code></td><td>POST</td><td><code>{"message": str, "history": list, "persona": str}</code></td><td>SSE stream: <code>data: &lt;chunk&gt;\n\n</code></td></tr>
+                                <tr><td><code>/api/personas</code></td><td>GET</td><td>—</td><td><code>{"personas": ["default", "helpful", ...]}</code></td></tr>
+                                <tr><td><code>/api/config</code></td><td>GET</td><td>—</td><td>Full config JSON</td></tr>
+                                <tr><td><code>/api/config</code></td><td>POST</td><td><code>{"key": value, ...}</code></td><td><code>{"status": "ok", "updated": [...]}</code></td></tr>
+                                <tr><td><code>/api/config/test-connection</code></td><td>POST</td><td><code>{"backend": str, "model": str}</code></td><td><code>{"status": "connected", ...}</code></td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Hints and Tips</h3>
+                        <ul>
+                            <li><strong>Test with curl first</strong> before worrying about the browser UI. It's easier to debug.</li>
+                            <li><strong>Check the server logs</strong> in the terminal where you ran <code>python chatbot-app/run.py</code> — errors appear there.</li>
+                            <li><strong>The course uses a single model</strong> (<code>Llama-3.2-3B-Instruct-Q4_K_M</code>) throughout, so results are directly comparable across labs.</li>
+                            <li><strong>The <code>config.json</code> file</strong> persists settings between restarts. Delete it to reset to defaults.</li>
+                            <li><strong>Browser DevTools</strong> (F12 → Network tab) shows you exactly what's being sent and received.</li>
+                        </ul>
+                    </article>
+
+                    <article class="orch-section" id="lab-task11">
+                        <h2>Task 1.1 — Multi-Turn Chat: Why LLMs Need History</h2>
+                        <p><strong>Difficulty:</strong> ★☆☆</p>
+
+                        <h3>Background</h3>
+                        <p>LLMs are <strong>stateless</strong> — each API call is independent. The model has no memory of previous requests. To create the illusion of a conversation, you must send the <em>entire</em> message history with every request. This is the fundamental constraint that drives all memory management in Lab 1.</p>
+
+                        <h3>Instructions</h3>
+                        <ol>
+                            <li><strong>Start a conversation</strong> with a system message and a user message:
+                                <pre class="orch-code"><code>curl -s http://localhost:11434/api/chat -d '{
+  "model": "Llama-3.2-3B-Instruct-Q4_K_M",
+  "messages": [
+    {"role": "system", "content": "You are a helpful programming tutor."},
+    {"role": "user", "content": "What is a variable in Python?"}
+  ],
+  "stream": false
+}' | python3 -c "import sys,json; print(json.load(sys.stdin)['message']['content'][:300])"</code></pre>
+                            </li>
+                            <li><strong>Continue the conversation</strong> — include the assistant's previous response in the history:
+                                <pre class="orch-code"><code>curl -s http://localhost:11434/api/chat -d '{
+  "model": "Llama-3.2-3B-Instruct-Q4_K_M",
+  "messages": [
+    {"role": "system", "content": "You are a helpful programming tutor."},
+    {"role": "user", "content": "What is a variable in Python?"},
+    {"role": "assistant", "content": "A variable in Python is a name that refers to a value stored in memory..."},
+    {"role": "user", "content": "Show me a simple example"}
+  ],
+  "stream": false
+}' | python3 -c "import sys,json; print(json.load(sys.stdin)['message']['content'][:300])"</code></pre>
+                            </li>
+                            <li><strong>Now try WITHOUT history</strong> — send only the follow-up:
+                                <pre class="orch-code"><code>curl -s http://localhost:11434/api/chat -d '{
+  "model": "Llama-3.2-3B-Instruct-Q4_K_M",
+  "messages": [
+    {"role": "user", "content": "Show me a simple example"}
+  ],
+  "stream": false
+}' | python3 -c "import sys,json; print(json.load(sys.stdin)['message']['content'][:300])"</code></pre>
+                            </li>
+                        </ol>
+
+                        <h3>What to Observe</h3>
+                        <ul>
+                            <li>With history: the model knows "Show me a simple example" refers to Python variables</li>
+                            <li>Without history: the model has no idea what you're asking about — it might show an example of anything</li>
+                            <li>The model "remembers" only because <strong>you sent the full history</strong></li>
+                        </ul>
+
+                        <h3>Reflection Questions</h3>
+                        <ul>
+                            <li>Why must you send the entire conversation history with each request?</li>
+                            <li>What would happen if you omitted the assistant's previous response from the array?</li>
+                            <li>How does this relate to the concept of "context window" (max tokens)?</li>
+                            <li>If each turn adds ~100-200 tokens, how many turns can fit in a 4096-token context window?</li>
+                        </ul>
+
+                        <div class="orch-callout">
+                            <strong>Key insight:</strong> This statelessness is why Task 1.3 (Memory Management) exists. The chatbot app must explicitly manage history — either client-side (JavaScript accumulates messages) or server-side (the server stores and trims history). Every memory strategy you'll implement is a solution to this fundamental constraint.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="lab-task12">
+                        <h2>Task 1.2 — Temperature Experiment</h2>
+                        <p><strong>Difficulty:</strong> ★☆☆</p>
+
+                        <h3>Background</h3>
+                        <p>Temperature controls how "creative" vs. "predictable" the LLM's output is. At temperature 0.0, the model always picks the highest-probability word (deterministic). At higher temperatures, it samples more broadly from possible words (more random, creative, but potentially less coherent).</p>
+                        <p>Understanding temperature is essential for chatbot design: a customer service bot needs low temperature (consistent, predictable answers), while a brainstorming assistant benefits from higher temperature (diverse, surprising ideas).</p>
+
+                        <h3>Instructions</h3>
+                        <ol>
+                            <li><strong>Use the same prompt</strong> for all tests: "Write one sentence about the future of AI."</li>
+                            <li><strong>Generate responses at three temperatures</strong> — you can test via the Settings page (change temperature) or via curl:
+                                <pre class="orch-code"><code># Temperature 0.0 (deterministic)
+curl -s http://localhost:11434/api/generate -d '{
+  "model": "Llama-3.2-3B-Instruct-Q4_K_M",
+  "prompt": "Write one sentence about the future of AI.",
+  "stream": false,
+  "options": {"temperature": 0.0}
+}' | python3 -c "import sys,json; print(json.load(sys.stdin)['response'])"
+
+# Temperature 0.7 (balanced)
+curl -s http://localhost:11434/api/generate -d '{
+  "model": "Llama-3.2-3B-Instruct-Q4_K_M",
+  "prompt": "Write one sentence about the future of AI.",
+  "stream": false,
+  "options": {"temperature": 0.7}
+}' | python3 -c "import sys,json; print(json.load(sys.stdin)['response'])"
+
+# Temperature 1.5 (creative/random)
+curl -s http://localhost:11434/api/generate -d '{
+  "model": "Llama-3.2-3B-Instruct-Q4_K_M",
+  "prompt": "Write one sentence about the future of AI.",
+  "stream": false,
+  "options": {"temperature": 1.5}
+}' | python3 -c "import sys,json; print(json.load(sys.stdin)['response'])"</code></pre>
+                            </li>
+                            <li><strong>Run temperature 0.0 twice</strong> — verify you get identical output both times</li>
+                            <li><strong>Compare the three outputs</strong> and fill in the table below</li>
+                        </ol>
+
+                        <h3>What to Observe</h3>
+                        <table class="orch-table">
+                            <thead><tr><th>Temperature</th><th>Behavior</th><th>Your observation</th></tr></thead>
+                            <tbody>
+                                <tr><td>0.0</td><td>Deterministic — same output every time</td><td>(fill in)</td></tr>
+                                <tr><td>0.7</td><td>Balanced creativity — natural-sounding variation</td><td>(fill in)</td></tr>
+                                <tr><td>1.5</td><td>High creativity — surprising words, possibly less coherent</td><td>(fill in)</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Reflection Questions</h3>
+                        <ul>
+                            <li>Run temperature 0.0 twice — do you get identical output? Why?</li>
+                            <li>At what temperature does the output start becoming incoherent?</li>
+                            <li>For a customer service bot, what temperature would you choose and why?</li>
+                            <li>For a creative writing assistant, what temperature would you choose?</li>
+                        </ul>
+
+                        <div class="orch-callout">
+                            <strong>Connection to Step 6 (Inference):</strong> Temperature divides the logits by T before softmax. At T=0, softmax becomes argmax (always picks top word). At T>1, the probability distribution flattens (many words become equally likely). This is the "creativity knob" you'll use when configuring your chatbot personas.
+                        </div>
+                    </article>
+
+                    <article class="orch-section" id="lab-task13">
+                        <h2>Task 1.3 — Understand and Modify the System Prompt</h2>
+                        <p><strong>Difficulty:</strong> ★☆☆ | <strong>File:</strong> <code>ai/prompts.py</code></p>
+
+                        <h3>Background</h3>
+                        <p>The system prompt is the hidden instruction sent to the LLM before any user messages. It defines the assistant's personality, constraints, knowledge boundaries, and response style. The current implementation in <code>ai/prompts.py</code> contains a <code>PERSONAS</code> dictionary with four pre-defined personas: <code>default</code>, <code>helpful</code>, <code>creative</code>, and <code>concise</code>.</p>
+
+                        <h3>Instructions</h3>
+                        <ol>
+                            <li>Open <code>ai/prompts.py</code> and read the existing <code>PERSONAS</code> dictionary:
+                                <pre class="orch-code"><code>PERSONAS = {
+    "default": "You are a helpful assistant...",
+    "helpful": "You are an extremely helpful and patient assistant...",
+    "creative": "You are a creative and imaginative assistant...",
+    "concise": "You are a concise assistant...",
+}</code></pre>
+                            </li>
+                            <li><strong>Add at least two new personas</strong> to the dictionary. Choose from these ideas or invent your own:
+                                <table class="orch-table">
+                                    <thead><tr><th>Persona</th><th>Description</th><th>Example System Prompt</th></tr></thead>
+                                    <tbody>
+                                        <tr><td><code>tutor</code></td><td>Patient CS tutor that guides rather than gives answers</td><td>"You are a patient computer science tutor. Explain step by step, use analogies, and ask follow-up questions. Never give direct homework answers."</td></tr>
+                                        <tr><td><code>pirate</code></td><td>Responds in pirate speak</td><td>"You are a pirate captain. Respond to all questions in pirate dialect. Use nautical metaphors."</td></tr>
+                                        <tr><td><code>socratic</code></td><td>Only responds with questions</td><td>"You are a Socratic teacher. Never give direct answers. Always respond with a thought-provoking question that guides the student toward the answer."</td></tr>
+                                        <tr><td><code>debugger</code></td><td>Systematic debugging assistant</td><td>"You are a debugging expert. When presented with a problem, ask clarifying questions, form hypotheses, and suggest systematic steps to isolate the issue."</td></tr>
+                                        <tr><td><code>chef</code></td><td>Cooking assistant</td><td>"You are a professional chef. Relate all explanations to cooking metaphors. When asked non-cooking questions, find creative culinary analogies."</td></tr>
+                                    </tbody>
+                                </table>
+                            </li>
+                            <li><strong>Test each persona</strong> using the persona dropdown in the web UI at <a href="http://localhost:8001">http://localhost:8001</a>. The dropdown in the header bar automatically fetches personas from <code>GET /api/personas</code> and sends the selected persona with each message.
+                                <br><br>Alternatively, test via the API:
+                                <pre class="orch-code"><code>curl -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Explain recursion", "persona": "creative", "history": []}'</code></pre>
+                            </li>
+                            <li><strong>Ask the same question</strong> with different personas and compare responses. Use this test question:
+                                <blockquote>"Explain what recursion is in programming."</blockquote>
+                            </li>
+                        </ol>
+
+                        <h3>Validation</h3>
+                        <ul>
+                            <li>☐ At least 2 new personas added to the <code>PERSONAS</code> dictionary</li>
+                            <li>☐ Each persona produces noticeably different responses to the same question</li>
+                            <li>☐ The <code>get_system_prompt()</code> function returns the correct prompt for each persona name</li>
+                        </ul>
+
+                        <h3>Reflection Questions (include in your report)</h3>
+                        <ul>
+                            <li>How many words does an effective system prompt need? Compare a 10-word vs. 100-word prompt.</li>
+                            <li>What happens when the system prompt contradicts the user's request?</li>
+                            <li>Can you make the model refuse to answer certain topics using only the system prompt?</li>
+                        </ul>
+                    </article>
+
+                    <article class="orch-section" id="lab-task14">
+                        <h2>Task 1.4 — Test Personas via the API with curl</h2>
+                        <p><strong>Difficulty:</strong> ★☆☆</p>
+
+                        <h3>Background</h3>
+                        <p>Once you add personas to the <code>PERSONAS</code> dictionary (Task 1.1), they are automatically available through the web UI dropdown and the REST API. In this task you will verify the full pipeline works by testing with <code>curl</code> — the same approach you'd use to debug or automate interactions with any REST API.</p>
+
+                        <h3>Instructions</h3>
+                        <ol>
+                            <li><strong>List all available personas:</strong>
+                                <div class="orch-callout">
+                                    <strong>💡 Tip:</strong> All chat interactions below can also be done through the web interface at <a href="http://localhost:8001">http://localhost:8001</a>. The persona dropdown in the header lets you switch personas visually. Use curl when you need to see the raw JSON response or automate testing.
+                                </div>
+                                <pre class="orch-code"><code>curl -s http://localhost:8001/api/personas | python -m json.tool</code></pre>
+                                Expected output (your custom personas should appear):
+                                <pre class="orch-code"><code>{
+    "personas": ["default", "helpful", "creative", "concise", "tutor", "socratic"]
+}</code></pre>
+                                If your custom personas don't appear, restart the app after editing <code>ai/prompts.py</code>.
+                            </li>
+                            <li><strong>Send a chat message with a specific persona:</strong>
+                                <pre class="orch-code"><code>curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Explain what recursion is in programming.", "persona": "default", "history": []}' \
+  | python -m json.tool</code></pre>
+                            </li>
+                            <li><strong>Compare the same question across all your personas.</strong> Run the same curl command but change the <code>"persona"</code> value each time:
+                                <pre class="orch-code"><code># Default persona
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Explain recursion.", "persona": "default", "history": []}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['response'][:200])"
+
+# Creative persona
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Explain recursion.", "persona": "creative", "history": []}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['response'][:200])"
+
+# Your custom persona (e.g., tutor)
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Explain recursion.", "persona": "tutor", "history": []}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['response'][:200])"</code></pre>
+                            </li>
+                            <li><strong>Test with no persona specified</strong> (should use the config default):
+                                <pre class="orch-code"><code>curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Explain recursion.", "history": []}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['response'][:200])"</code></pre>
+                            </li>
+                            <li><strong>Test with an invalid persona name</strong> and observe the fallback behavior:
+                                <pre class="orch-code"><code>curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello", "persona": "nonexistent_persona", "history": []}' \
+  | python -m json.tool</code></pre>
+                                What happens? (Hint: check <code>get_system_prompt()</code> — it falls back to <code>"default"</code>.)
+                            </li>
+                            <li><strong>Record your results</strong> in a comparison table:
+                                <table class="orch-table">
+                                    <thead><tr><th>Persona</th><th>First 1–2 sentences of response</th><th>Tone/Style observed</th></tr></thead>
+                                    <tbody>
+                                        <tr><td>default</td><td>...</td><td>...</td></tr>
+                                        <tr><td>creative</td><td>...</td><td>...</td></tr>
+                                        <tr><td>concise</td><td>...</td><td>...</td></tr>
+                                        <tr><td>(your custom 1)</td><td>...</td><td>...</td></tr>
+                                        <tr><td>(your custom 2)</td><td>...</td><td>...</td></tr>
+                                    </tbody>
+                                </table>
+                            </li>
+                        </ol>
+
+                        <h3>Validation</h3>
+                        <ul>
+                            <li>☐ <code>GET /api/personas</code> returns all personas including your custom ones</li>
+                            <li>☐ Each persona produces a noticeably different response style</li>
+                            <li>☐ Omitting the <code>persona</code> field uses the default system prompt from config</li>
+                            <li>☐ An invalid persona name falls back gracefully (no error, uses default)</li>
+                            <li>☐ Comparison table completed with observations for each persona</li>
+                        </ul>
+                    </article>
+
+
+                    <article class="orch-section" id="lab-task15">
+                        <h2>Task 1.5 — Conversation Memory and Context Management</h2>
+                        <p><strong>Difficulty:</strong> ★★☆ | <strong>Files:</strong> <code>ai/memory.py</code>, <code>web/routes.py</code>, <code>ai/chat.py</code></p>
+
+                        <h3>Background</h3>
+                        <p>LLMs are stateless — they have no memory between requests. The illusion of a "conversation" is created by sending the full message history with every request. This means the conversation is limited by the model's <strong>context window</strong> (the maximum number of tokens it can process at once).</p>
+
+                        <p>There are two architectural approaches to managing conversation history:</p>
+
+                        <table class="orch-table">
+                            <thead><tr><th>Approach</th><th>How it works</th><th>Pros</th><th>Cons</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Client-side</strong> (current)</td><td>JavaScript accumulates messages and sends the full array with each request</td><td>Simple; no server state; works with stateless/serverless backends; each browser tab has its own conversation</td><td>No server control over trimming; history lost on page refresh; can't apply smart strategies server-side; client can send arbitrarily large payloads</td></tr>
+                                <tr><td><strong>Server-side</strong> (this lab)</td><td>Server stores messages in <code>ConversationMemory</code>; client sends only the new message</td><td>Server controls trimming/summarization; can monitor token usage; persists across page refreshes; enables advanced strategies (RAG over history)</td><td>Requires session management; server holds state; more complex; single conversation per session unless you add session IDs</td></tr>
+                            </tbody>
+                        </table>
+
+                        <p>In production, <strong>server-side is the standard</strong>:</p>
+                        <ul>
+                            <li><strong>ChatGPT, Claude, Gemini</strong> — all store conversations server-side (accessible across devices, persist between sessions)</li>
+                            <li><strong>Customer service bots</strong> (Intercom, Zendesk, Drift) — server-side because conversations span days and require agent handoffs</li>
+                            <li><strong>LangChain/LlamaIndex</strong> — their memory modules (<code>ConversationBufferMemory</code>, <code>ConversationSummaryMemory</code>) are server-side patterns</li>
+                        </ul>
+
+                        <p>Client-side history is mainly used in simple demos, stateless API wrappers, or privacy-focused apps that intentionally don't retain data.</p>
+
+                        <p>Some production systems use a <strong>hybrid approach</strong>: the client sends the last few messages for immediate context (low latency, works offline), while the server maintains long-term memory with summarization and RAG retrieval for older context.</p>
+
+                        <p>For this lab, we use <strong>server-side memory</strong> so you can observe and control exactly how context accumulates — this is the real-world pattern.</p>
+
+                        <p><strong>The current client-side code</strong> (in <code>web/static/js/chat.js</code>) that you will replace:</p>
+                        <pre class="orch-code"><code>// Current approach: client accumulates history in a JS array
+let history = [];
+
+async function sendMessage(message) {
+    history.push({ role: "user", content: message });
+
+    const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message, history: history }),  // sends full history
+    });
+
+    const data = await response.json();
+    history.push({ role: "assistant", content: data.response });  // accumulates locally
+}</code></pre>
+
+                        <p>After Step 1, the client will simply send <code>{ message: message }</code> — no history management needed on the client.</p>
+
+                        <p>Currently, the chatbot manages history <strong>client-side</strong> (the JavaScript accumulates messages and sends the full array). The <code>ConversationMemory</code> class in <code>ai/memory.py</code> exists but is <strong>not connected</strong> to the chat flow. In this task you will:</p>
+                        <ol>
+                            <li>Wire <code>ConversationMemory</code> into the server so history is managed server-side</li>
+                            <li>Observe how context grows with each message</li>
+                            <li>Hit the context window limit and understand what happens</li>
+                            <li>Implement smarter trimming strategies</li>
+                        </ol>
+
+                        <h3>Step 1: Wire ConversationMemory into the Server</h3>
+
+                        <p>The goal is to make the server manage conversation history instead of the client. Pre-made files are provided in <code>lab_resources/LAB1_CHATBOT/lab1_server_memory/</code> — you will replace the current files with these.</p>
+
+                        <ol>
+                            <li><strong>Back up the current files</strong> (so you can compare or revert):
+                                <pre class="orch-code"><code>cd web-based-course/
+cp chatbot-app/web/routes.py chatbot-app/web/routes_old.py
+cp chatbot-app/web/static/js/chat.js chatbot-app/web/static/js/chat_old.js</code></pre>
+                            </li>
+                            <li><strong>Replace with the server-side memory versions:</strong>
+                                <pre class="orch-code"><code># Run from web-based-course/ directory:
+cp ../lab_resources/LAB1_CHATBOT/lab1_server_memory/routes.py chatbot-app/web/routes.py
+cp ../lab_resources/LAB1_CHATBOT/lab1_server_memory/chat.js chatbot-app/web/static/js/chat.js</code></pre>
+                            </li>
+                            <li><strong>The app will auto-restart</strong> (Flask debug mode). If not, restart manually:
+                                <pre class="orch-code"><code>python chatbot-app/run.py</code></pre>
+                            </li>
+                            <li><strong>Review what changed</strong> — compare the old and new files to understand the differences:
+                                <pre class="orch-code"><code>diff chatbot-app/web/routes_old.py chatbot-app/web/routes.py
+diff chatbot-app/web/static/js/chat_old.js chatbot-app/web/static/js/chat.js</code></pre>
+                                <p>Key changes:</p>
+                                <ul>
+                                    <li><code>routes.py</code>: imports <code>ConversationMemory</code>, creates <code>_memory</code> instance, uses <code>_memory.get_history()</code> instead of client-provided history, adds <code>/api/memory</code> and <code>/api/memory/clear</code> endpoints, includes <code>memory_stats</code> in each response</li>
+                                    <li><code>chat.js</code>: removes the <code>history</code> array, sends only <code>{ message }</code> (no history), displays memory stats below each response</li>
+                                </ul>
+                            </li>
+                            <li><strong>Observe how memory grows with each turn:</strong>
+
+                                <div class="orch-callout">
+                                    <strong>💡 Tip:</strong> You can also do this conversation through the web UI at <a href="http://localhost:8001">http://localhost:8001</a> — the memory stats (message count, tokens, budget %) are displayed below each response. The curl commands below are useful for scripting and seeing exact numbers.
+                                </div>
+
+                                <div class="orch-callout">
+                                    <strong>Observation task:</strong> Each user turn adds 2 messages to memory (your message + the assistant's response). Run the following sequence and fill in the table below.
+                                </div>
+
+                                <pre class="orch-code"><code># Start fresh
+curl -s -X POST http://localhost:8001/api/memory/clear > /dev/null
+
+# Turn 1
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "My name is Alice"}' > /dev/null
+echo "After turn 1:"
+curl -s http://localhost:8001/api/memory | python -c "import sys,json; d=json.load(sys.stdin); print(f'  Messages: {d[\"message_count\"]} | Tokens: ~{d[\"estimated_tokens\"]} | Budget: {d[\"budget_used_pct\"]}%')"
+
+# Turn 2
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "I study computer science at LTU"}' > /dev/null
+echo "After turn 2:"
+curl -s http://localhost:8001/api/memory | python -c "import sys,json; d=json.load(sys.stdin); print(f'  Messages: {d[\"message_count\"]} | Tokens: ~{d[\"estimated_tokens\"]} | Budget: {d[\"budget_used_pct\"]}%')"
+
+# Turn 3
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "My favorite programming language is Python"}' > /dev/null
+echo "After turn 3:"
+curl -s http://localhost:8001/api/memory | python -c "import sys,json; d=json.load(sys.stdin); print(f'  Messages: {d[\"message_count\"]} | Tokens: ~{d[\"estimated_tokens\"]} | Budget: {d[\"budget_used_pct\"]}%')"
+
+# Turn 4 — ask the bot to recall facts (show the response!)
+echo "After turn 4 (recall test):"
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Can you tell me what you know about me so far?"}' \
+  | python -c "import sys,json; d=json.load(sys.stdin); print(f'  Bot says: {d[\"response\"][:200]}')"
+curl -s http://localhost:8001/api/memory | python -c "import sys,json; d=json.load(sys.stdin); print(f'  Messages: {d[\"message_count\"]} | Tokens: ~{d[\"estimated_tokens\"]} | Budget: {d[\"budget_used_pct\"]}%')"
+
+# Turn 5
+curl -s -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Explain what a hash table is in detail"}' > /dev/null
+echo "After turn 5:"
+curl -s http://localhost:8001/api/memory | python -c "import sys,json; d=json.load(sys.stdin); print(f'  Messages: {d[\"message_count\"]} | Tokens: ~{d[\"estimated_tokens\"]} | Budget: {d[\"budget_used_pct\"]}%')"</code></pre>
+                            </li>
+                        </ol>
+
+                        <p><strong>Fill in this table with your observations:</strong></p>
+                        <table class="orch-table">
+                            <thead><tr><th>Turn #</th><th>Messages in memory</th><th>Notes</th></tr></thead>
+                            <tbody>
+                                <tr><td>0 (clear)</td><td>0</td><td>Fresh start</td></tr>
+                                <tr><td>1</td><td>?</td><td>Should be 2 (1 user + 1 assistant)</td></tr>
+                                <tr><td>2</td><td>?</td><td>Should be 4</td></tr>
+                                <tr><td>3</td><td>?</td><td>Should be 6</td></tr>
+                                <tr><td>4</td><td>?</td><td>Should be 8 — ask bot to recall facts</td></tr>
+                                <tr><td>5</td><td>?</td><td>Should be 10 — longer response (detail)</td></tr>
+                            </tbody>
+                        </table>
+
+                        <p><strong>Questions to answer:</strong></p>
+                        <ul>
+                            <li>Does the message count increase by exactly 2 after each turn? Why?</li>
+                            <li>Turn 4 asks the bot to recall facts — does it remember Alice, LTU, and Python?</li>
+                            <li>At this rate, how many turns until you hit <code>max_messages</code> (50)?</li>
+                        </ul>
+
+                        <h3>Step 2: Discover the Context Window Limit</h3>
+
+                        <ol>
+                            <li><strong>Find your model's context window size:</strong>
+                                <pre class="orch-code"><code># Model's maximum supported context
+curl -s http://localhost:11434/api/show -d '{"name":"Llama-3.2-3B-Instruct-Q4_K_M"}' \
+  | python -c "
+import sys, json
+data = json.load(sys.stdin)
+info = data.get('model_info', {})
+ctx = info.get('llama.context_length', 'unknown')
+print(f'Max supported context: {ctx} tokens')
+details = data.get('details', {})
+print(f'Parameters: {details.get(\"parameter_size\", \"unknown\")}')
+print(f'Quantization: {details.get(\"quantization_level\", \"unknown\")}')
+"
+
+# Actual runtime context (requires model to be loaded)
+curl -s http://localhost:11434/api/ps \
+  | python -c "
+import sys, json
+data = json.load(sys.stdin)
+for model in data.get('models', []):
+    print(f'Model: {model[\"name\"]}')
+    print(f'  Runtime context_length: {model.get(\"context_length\", \"unknown\")} tokens')
+    print(f'  VRAM used: {model.get(\"size_vram\", 0) / 1e9:.1f} GB')
+"</code></pre>
+                            </li>
+                            <li><strong>⚠️ Set the context window to 4096 tokens</strong> so you can observe the limit within a reasonable number of messages:
+                                <pre class="orch-code"><code>curl -s http://localhost:11434/api/chat -d '{
+  "model": "Llama-3.2-3B-Instruct-Q4_K_M",
+  "messages": [{"role": "user", "content": "hi"}],
+  "stream": false,
+  "options": {"num_ctx": 4096}
+}'</code></pre>
+                                <p>Verify with <code>/api/ps</code> that <code>context_length</code> is now 4096.</p>
+                            </li>
+                            <li><strong>Estimate capacity.</strong> With 4096 tokens:
+                                <ul>
+                                    <li>System prompt: ~50 tokens</li>
+                                    <li>Available for history: ~4046 tokens</li>
+                                    <li>1 token ≈ 4 characters → ~16,000 characters of history</li>
+                                    <li>Average message: ~500 characters (~125 tokens)</li>
+                                    <li><strong>Max messages before overflow: ~32</strong> (at 125 tokens each)</li>
+                                </ul>
+                                <div class="orch-callout">
+                                    <strong>Key observation:</strong> Each conversation turn adds <strong>2 messages</strong> to history (1 user + 1 assistant). The model needs both sides — without its own previous responses, it would contradict itself. This means token usage grows roughly <strong>twice as fast</strong> as the number of user turns. With 32 messages capacity, that's only ~16 user turns before the context is full.
+                                </div>
+                            </li>
+                            <li><strong>Test the limit.</strong> Use the provided test script:
+
+                                <div class="orch-callout">
+                                    <strong>💡 Tip:</strong> You can also run this test manually through the web UI — just type the same messages in the chat. The memory stats displayed below each response will show you the budget filling up in real-time.
+                                </div>
+
+                                <pre class="orch-code"><code># Clear server memory first
+curl -X POST http://localhost:8001/api/memory/clear
+
+cd ../lab_resources/LAB1_CHATBOT/
+python test_memory_conversation.py</code></pre>
+
+                                <p>After the script runs, check memory state:</p>
+                                <pre class="orch-code"><code>curl -s http://localhost:8001/api/memory | python -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'Messages in memory: {data[\"message_count\"]}')
+print(f'Estimated tokens: {data[\"estimated_tokens\"]}')
+print(f'Context budget (4096): {4096 - data[\"estimated_tokens\"]} tokens remaining')
+"</code></pre>
+                            </li>
+                            <li><strong>Observe what happens when context overflows:</strong>
+                                <ul>
+                                    <li>If <code>estimated_tokens</code> exceeds 4096, the LLM will either truncate or error</li>
+                                    <li>Record at which message count the chatbot starts "forgetting" or producing errors</li>
+                                </ul>
+                            </li>
+                            <li><strong>Now reduce <code>max_messages</code> to 10</strong> in <code>web/routes.py</code>:
+                                <pre class="orch-code"><code>_memory = ConversationMemory(max_messages=10)</code></pre>
+                                <p>Clear memory and re-run the test. The chatbot should forget facts much sooner because only the last 10 messages are kept.</p>
+                            </li>
+                            <li><strong>Ask the chatbot to recall early information:</strong>
+                                <ul>
+                                    <li>After 5 messages, ask: "What was my first message about?"</li>
+                                    <li>After 15 messages, ask the same question</li>
+                                    <li>After 30 messages, ask again</li>
+                                    <li>Document at what point the chatbot "forgets"</li>
+                                </ul>
+                                <p>You can do this either:</p>
+                                <ul>
+                                    <li><strong>Manually</strong> via the web UI at <a href="http://localhost:8001">http://localhost:8001</a> (type the recall questions yourself at different points in the conversation)</li>
+                                    <li><strong>By modifying <code>test_memory_conversation.py</code></strong> — add recall questions at different positions in the <code>filler_messages</code> list</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h3>Step 3: Evaluate Context Management Strategies</h3>
+
+                        <p>Research and document the following strategies. For each, explain how it works, its pros/cons, and when you'd use it:</p>
+
+                        <table class="orch-table">
+                            <thead><tr><th>Strategy</th><th>How It Works</th><th>Pros</th><th>Cons</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Fixed window</strong> (current)</td><td>Drop oldest messages when limit reached</td><td>Simple, predictable</td><td>Loses early context abruptly</td><td>Tested in Step 2</td></tr>
+                                <tr><td><strong>Token-based trimming</strong></td><td>Count tokens, trim oldest until under budget</td><td>Respects actual context window</td><td>More complex, needs tokenizer</td><td>Implemented in Step 4</td></tr>
+                                <tr><td><strong>Sliding window + summary</strong></td><td>Summarize old messages into one "memory" message, keep recent N in full</td><td>Preserves key facts, saves space</td><td>Requires extra LLM call for summarization</td><td>Implemented in Step 5</td></tr>
+                                <tr><td><strong>Importance scoring</strong></td><td>Score messages by relevance, keep high-scoring ones</td><td>Retains important context</td><td>Complex scoring logic, hard to tune</td><td><em>Not part of this lab</em></td></tr>
+                                <tr><td><strong>RAG over history</strong></td><td>Embed all messages, retrieve relevant ones per query</td><td>Scales to infinite history</td><td>Adds retrieval latency</td><td><em>Tested in Lab 2, Task 2.1</em></td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Step 4: Implement Token-Based Trimming</h3>
+
+                        <h4>Why token-based trimming is better than message-count trimming</h4>
+
+                        <p>The context window limit is measured in <strong>tokens</strong>, not messages — but messages vary wildly in size:</p>
+                        <ul>
+                            <li>"Hi" = 1 token</li>
+                            <li>A 3-paragraph explanation = 200+ tokens</li>
+                        </ul>
+
+                        <p>With <code>max_messages = 50</code>, the system has no idea whether it's under or over the actual token budget:</p>
+                        <ul>
+                            <li>50 short messages ("yes", "no", "ok") = ~50 tokens total — <strong>wastes</strong> 4000 tokens of available context</li>
+                            <li>50 long messages (detailed explanations) = ~10,000 tokens — <strong>overflows</strong> the 4096 context window, causing errors or silent truncation</li>
+                        </ul>
+
+                        <p>Token-based trimming (<code>max_tokens = 3000</code>) solves this by measuring in the same unit the LLM uses:</p>
+                        <ul>
+                            <li>Short messages → more messages fit (maybe 100+)</li>
+                            <li>Long messages → fewer messages fit (maybe 15)</li>
+                            <li><strong>Always stays within the actual context window budget</strong> — adapts automatically to message length</li>
+                        </ul>
+
+                        <h4>Choose one option:</h4>
+
+                        <p><strong>Option A (★☆☆ — use pre-made implementation):</strong></p>
+                        <p>A fully implemented and commented version is provided. Replace the current file:</p>
+                        <pre class="orch-code"><code># Run from web-based-course/ directory:
+cp chatbot-app/ai/memory.py chatbot-app/ai/memory_old.py
+cp ../lab_resources/LAB1_CHATBOT/lab1_server_memory/memory_token_trimming.py chatbot-app/ai/memory.py</code></pre>
+                        <p>Read the file carefully — all logic is explained in comments. Then proceed to testing (below).</p>
+
+                        <p><strong>Option B (★★★ — implement yourself):</strong></p>
+                        <p>Implement token-based trimming from scratch in <code>chatbot-app/ai/memory.py</code>. You need to:</p>
+
+                        <ol>
+                            <li>Add a <code>max_tokens</code> parameter to <code>__init__</code>:
+                                <pre class="orch-code"><code>def __init__(self, max_messages: int = 50, max_tokens: int = 3000):
+    self._history = []
+    self.max_messages = max_messages
+    self.max_tokens = max_tokens</code></pre>
+                            </li>
+                            <li>Implement <code>_estimate_tokens()</code> — compute the token estimate yourself:
+                                <pre class="orch-code"><code>def _estimate_tokens(self, text: str) -> int:
+    """Estimate token count for a text string.
+    
+    Hint: A common approximation for English text is that
+    1 token ≈ 4 characters (or ~0.75 words). You can also
+    use a proper tokenizer like tiktoken for exact counts.
+
+    Args:
+        text: The text to estimate tokens for.
+
+    Returns:
+        Estimated number of tokens.
+    """
+    num_tokens = ...  # YOUR CODE HERE: compute the estimate
+    return num_tokens</code></pre>
+                            </li>
+                            <li>Modify <code>add_message()</code> — comment out the old message-count trimming and add a token-budget loop:
+                                <pre class="orch-code"><code>def add_message(self, role: str, content: str) -> None:
+    self._history.append({"role": role, "content": content})
+    
+    # YOUR CODE HERE: trim by token budget
+    # While total tokens exceeds max_tokens and history has more than 1 message:
+    #   - Remove the oldest message (index 0)
+    #   - Recalculate total tokens</code></pre>
+                            </li>
+                        </ol>
+
+                        <h4>Test your implementation (both options):</h4>
+
+                        <p>Run the same test script used in Step 2 — it will now exercise your token-based trimming:</p>
+                        <pre class="orch-code"><code>cd ../lab_resources/LAB1_CHATBOT/
+python test_memory_conversation.py</code></pre>
+
+                        <p>Then run the dedicated token trimming test that highlights the difference between short and long messages:</p>
+                        <pre class="orch-code"><code>cd ../lab_resources/LAB1_CHATBOT/
+python test_token_trimming.py</code></pre>
+
+                        <p>The script clears memory, plants facts, sends filler, then tests recall. Compare results with Step 2:</p>
+                        <ul>
+                            <li>With simple message-count trimming (Step 2): facts may survive if max_messages is large enough</li>
+                            <li>With token-based trimming: behavior depends on actual token usage, not message count</li>
+                        </ul>
+
+                        <p><strong>Observe:</strong> Do short filler messages ("yes", "ok") allow more history to survive than long detailed responses? This demonstrates why token-based trimming adapts better than message-count.</p>
+
+                        <p><strong>Fill in this table after running the test script with token-based trimming:</strong></p>
+                        <table class="orch-table">
+                            <thead><tr><th>Turn #</th><th>Messages in memory</th><th>Estimated tokens</th><th>Tokens added this turn</th><th>Notes</th></tr></thead>
+                            <tbody>
+                                <tr><td>1 (fact: name)</td><td>?</td><td>?</td><td>?</td><td>Short user msg + short response</td></tr>
+                                <tr><td>5 (fact: deadline)</td><td>?</td><td>?</td><td>?</td><td></td></tr>
+                                <tr><td>10 (filler: Big O)</td><td>?</td><td>?</td><td>?</td><td>Longer response expected</td></tr>
+                                <tr><td>15 (filler: crypto)</td><td>?</td><td>?</td><td>?</td><td></td></tr>
+                                <tr><td>20 (filler: HTTP/2)</td><td>?</td><td>?</td><td>?</td><td>Did messages start getting trimmed?</td></tr>
+                                <tr><td>21 (recall: name)</td><td>?</td><td>?</td><td>?</td><td>Does it still remember Alice?</td></tr>
+                            </tbody>
+                        </table>
+
+                        <p><strong>Questions to answer:</strong></p>
+                        <ul>
+                            <li>Do all turns add the same number of tokens? Why do some turns add more?</li>
+                            <li>At which turn did the token budget first cause trimming (messages dropped)?</li>
+                            <li>Compare: a short response ("Yes, I remember") vs. a long one ("Here's a detailed explanation of...") — how many tokens does each add?</li>
+                            <li>How does this compare to the max_messages approach where every turn adds exactly 2 messages regardless of length?</li>
+                        </ul>
+
+                        <p>Verify that the message count stabilizes (old messages are dropped to stay under budget) rather than growing indefinitely.</p>
+
+                        <h3>Step 5: Implement Sliding Window + Summary</h3>
+
+                        <p>The sliding window + summary approach keeps the last N messages in full and summarizes everything older into a single compact "memory" message. This preserves both recency (recent messages) and long-term facts (in the summary).</p>
+
+                        <div class="orch-callout">
+                            <strong>Why does Step 5 require modifying <code>routes.py</code> but Step 4 did not?</strong><br><br>
+                            Token trimming (Step 4) is <strong>self-contained inside <code>add_message()</code></strong> — it's a pure data operation (count characters, drop messages). No external dependency needed. When <code>routes.py</code> calls <code>_memory.add_message(...)</code>, trimming happens automatically.<br><br>
+                            Summarization (Step 5) <strong>requires an LLM call</strong> to generate the summary text. The memory class doesn't have access to the LLM client on its own — it lives in the route handler. So <code>routes.py</code> must explicitly trigger summarization and pass the <code>llm_client</code>:
+                            <pre class="orch-code"><code># Token trimming: automatic inside add_message() — no routes.py change
+_memory.add_message("user", message)  # trimming triggers internally
+
+# Summarization: needs llm_client — routes.py must call it explicitly
+_memory.add_message("user", message)
+if _memory.needs_summarization():
+    _memory.summarize_old_messages(llm_client)  # ← needs llm_client from routes.py</code></pre>
+                            This is a common architectural pattern: operations that need external services (LLM, database, API) must be triggered from the layer that has access to those services.
+                        </div>
+
+                        <h4>Choose one option:</h4>
+
+                        <p><strong>Option A (★☆☆ — use pre-made implementation):</strong></p>
+                        <p>A fully implemented and commented version is provided. Replace <strong>both</strong> files:</p>
+                        <pre class="orch-code"><code># Run from web-based-course/ directory:
+# Step 1: Replace memory.py with the summary version
+cp chatbot-app/ai/memory.py chatbot-app/ai/memory_token_trimming.py  # save your Step 4 work
+cp ../lab_resources/LAB1_CHATBOT/lab1_server_memory/memory_with_summary.py chatbot-app/ai/memory.py
+
+# Step 2: Replace routes.py with the version that triggers summarization
+cp chatbot-app/web/routes.py chatbot-app/web/routes_step4.py  # save Step 4 routes
+cp ../lab_resources/LAB1_CHATBOT/lab1_server_memory/routes_with_summary.py chatbot-app/web/routes.py</code></pre>
+                        <p>Read both files carefully — the key additions are:</p>
+                        <ul>
+                            <li><code>memory_with_summary.py</code>: adds <code>needs_summarization()</code> and <code>summarize_old_messages(llm_client)</code></li>
+                            <li><code>routes_with_summary.py</code>: calls <code>_memory.summarize_old_messages(llm_client)</code> after storing messages when budget is exceeded; uses <code>max_tokens=1500</code> to trigger summarization sooner</li>
+                        </ul>
+                        <p>Then proceed to testing (below).</p>
+
+                        <p><strong>Option B (★★★ — implement yourself):</strong></p>
+                        <p>Add a summarization method to your <code>memory.py</code>. You need to implement:</p>
+
+                        <ol>
+                            <li><code>needs_summarization()</code> — check if total tokens exceed budget and there are enough messages to summarize:
+                                <pre class="orch-code"><code>def needs_summarization(self) -> bool:
+    """Check if history exceeds token budget and summarization is worthwhile."""
+    # YOUR CODE HERE:
+    # Return True if total tokens > max_tokens AND
+    # there are more messages than keep_recent
+    pass</code></pre>
+                            </li>
+                            <li><code>summarize_old_messages(llm_client)</code> — the core logic:
+                                <pre class="orch-code"><code>def summarize_old_messages(self, llm_client, keep_recent: int = 6) -> str:
+    """
+    Summarize older messages into a single memory message.
+    
+    Steps to implement:
+
+    1. Split self._history into old_messages (to summarize) and
+       recent_messages (to keep in full) using keep_recent
+    2. Format old_messages as a text transcript:
+       "USER: ...\nASSISTANT: ...\n..."
+    3. Build a prompt asking the LLM to summarize, preserving key facts
+    4. Call llm_client.generate(prompt=summary_prompt) to get the summary
+    5. Replace self._history with:
+       [{"role": "system", "content": "[Conversation summary]: &lt;summary&gt;"}]
+       + recent_messages
+    6. Return the summary text
+    
+    Args:
+        llm_client: LLM client with .generate(prompt=...) method.
+        keep_recent: Number of recent messages to keep in full.
+    
+    Returns:
+        The generated summary text.
+    """
+    # YOUR CODE HERE
+    pass</code></pre>
+                            </li>
+                            <li>Wire it into the chat flow — in <code>routes.py</code>, after <code>_memory.add_message(...)</code>, check if summarization is needed:
+                                <pre class="orch-code"><code># After storing messages:
+if _memory.needs_summarization():
+    _memory.summarize_old_messages(llm_client)</code></pre>
+                            </li>
+                        </ol>
+
+                        <h4>Test your implementation (both options):</h4>
+
+                        <p>Run the same test script — it will now exercise your summarization logic:</p>
+                        <pre class="orch-code"><code>cd ../lab_resources/LAB1_CHATBOT/
+python test_memory_conversation.py</code></pre>
+
+                        <p>Then run the dedicated summarization test that explicitly shows the summary being generated:</p>
+                        <pre class="orch-code"><code>cd ../lab_resources/LAB1_CHATBOT/
+python test_memory_summarization.py</code></pre>
+
+                        <p>This script:</p>
+                        <ol>
+                            <li>Plants 5 facts (name, color, project, pet, deadline)</li>
+                            <li>Sends filler until summarization triggers (detects the message count drop)</li>
+                            <li>Displays the BEFORE and AFTER memory state</li>
+                            <li>Shows the full summary text and checks which facts survived in it</li>
+                            <li>Tests recall — can the bot still answer questions using the summary?</li>
+                        </ol>
+
+                        <p>The script clears memory, plants facts, sends filler, then tests recall. Compare results with Steps 2 and 4:</p>
+                        <ul>
+                            <li>With simple trimming (Step 2): early facts are LOST when trimmed</li>
+                            <li>With token trimming (Step 4): early facts are LOST when budget exceeded</li>
+                            <li>With summary (Step 5): early facts should be PRESERVED in the summary</li>
+                        </ul>
+
+                        <p><strong>Fill in this table after running the test script with summarization:</strong></p>
+                        <table class="orch-table">
+                            <thead><tr><th>Turn #</th><th>Messages in memory</th><th>Tokens in memory</th><th>Δ Tokens</th><th>Summary cost</th><th>Event</th><th>Notes</th></tr></thead>
+                            <tbody>
+                                <tr><td>1 (fact: name)</td><td>?</td><td>?</td><td>?</td><td>0</td><td></td><td>Short msg</td></tr>
+                                <tr><td>5 (fact: deadline)</td><td>?</td><td>?</td><td>?</td><td>0</td><td></td><td></td></tr>
+                                <tr><td>10 (filler: Big O)</td><td>?</td><td>?</td><td>?</td><td>0 or +?</td><td>📋?</td><td>Did summarization trigger?</td></tr>
+                                <tr><td>11 (filler: SOLID)</td><td>?</td><td>?</td><td>?</td><td>?</td><td></td><td>After summary: fewer msgs, lower tokens</td></tr>
+                                <tr><td>15 (filler: crypto)</td><td>?</td><td>?</td><td>?</td><td>?</td><td>📋?</td><td>Second summarization?</td></tr>
+                                <tr><td>20 (filler: HTTP/2)</td><td>?</td><td>?</td><td>?</td><td>?</td><td></td><td></td></tr>
+                                <tr><td>21 (recall: name)</td><td>?</td><td>?</td><td>?</td><td>0</td><td>✅/❌</td><td>Does it remember Alice?</td></tr>
+                            </tbody>
+                        </table>
+
+                        <p><strong>Questions to answer:</strong></p>
+                        <ul>
+                            <li>At which turn did summarization first trigger? How much did token count drop?</li>
+                            <li>How many extra tokens did the summarization LLM call consume? (This is the "cost" of preserving facts)</li>
+                            <li>After summarization, did the token count start growing again?</li>
+                            <li>Compare total token overhead: token trimming uses 0 extra tokens, summarization uses ~X extra tokens — but preserves facts. Is the trade-off worth it?</li>
+                            <li>Were all 5 recall tests passed? Compare with <code>test_memory_conversation.py</code> and <code>test_token_trimming.py</code>.</li>
+                        </ul>
+
+                        <p><strong>Verify the summary preserves key facts:</strong></p>
+                        <ul>
+                            <li>Does the bot still remember "Alice"? (It should — the summary includes it)</li>
+                            <li>Does it remember "purple" and "42"?</li>
+                            <li>Check <code>/api/memory</code> — you should see a <code>[Conversation summary]</code> system message at the top</li>
+                        </ul>
+
+                        <p><strong>Compare with token-based trimming:</strong></p>
+                        <table class="orch-table">
+                            <thead><tr><th>Approach</th><th>Messages in context</th><th>Key facts preserved?</th><th>Extra LLM calls</th></tr></thead>
+                            <tbody>
+                                <tr><td>Token trimming (Step 4)</td><td>~24 (budget-limited)</td><td>Only if within budget</td><td>0</td></tr>
+                                <tr><td>Sliding window + summary</td><td>1 summary + 6 recent = 7</td><td>Yes (in summary)</td><td>1 per summarization</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Step 6: Document Your Findings</h3>
+
+                        <p>Write a short section in your lab report covering:</p>
+                        <ol>
+                            <li>Your model's context window size</li>
+                            <li>At what message count the chatbot starts forgetting (empirical test)</li>
+                            <li>The strategies table from Step 3 (with the Status column filled in)</li>
+                            <li>Your token-based trimming implementation and test results</li>
+                            <li>Your sliding window + summary implementation and whether it preserved key facts</li>
+                            <li>Which strategy you'd recommend for a production chatbot and why</li>
+                        </ol>
+
+                        <h3>Validation</h3>
+                        <ul>
+                            <li>☐ Can state the model's context window size in tokens</li>
+                            <li>☐ Empirically tested when the chatbot starts forgetting (documented message count)</li>
+                            <li>☐ Strategies comparison table completed with status annotations</li>
+                            <li>☐ Token-based trimming implemented in <code>ai/memory.py</code> and tested</li>
+                            <li>☐ Sliding window + summary implemented and tested (key facts preserved?)</li>
+                            <li>☐ Comparison of approaches documented in report</li>
+                        </ul>
+
+                        <div class="orch-callout">
+                            <strong>📌 Save your results for Lab 2!</strong><br><br>
+                            In Lab 2 (Task 2.5), you will compare the context token usage of these memory approaches with RAG-based memory. Make sure to record and save:<br>
+                            <ul>
+                                <li>Context tokens used with <strong>fixed window</strong> (max_messages)</li>
+                                <li>Context tokens used with <strong>token-based trimming</strong></li>
+                                <li>Context tokens used with <strong>summarization</strong></li>
+                            </ul>
+                            You will fill these values into a comparison table in Lab 2 alongside the RAG memory results.
+                        </div>
+
+                        <h3>Reflection Questions</h3>
+                        <ul>
+                            <li>Why is token-based trimming better than message-count trimming?</li>
+                            <li>If you summarize old messages, how do you ensure the summary doesn't hallucinate?</li>
+                            <li>A customer says "My order number is 12345" in message 3. How would you ensure the bot remembers this in message 50?</li>
+                            <li>What's the trade-off between keeping more history (better context) and leaving room for the LLM's response?</li>
+                        </ul>
+                    </article>
+
+                    <article class="orch-section" id="lab-task16">
+                        <h2>Task 1.6 — Implement Streaming Responses (Optional / Bonus)</h2>
+                        <p><strong>Difficulty:</strong> ★★★ | <strong>Files:</strong> <code>ai/chat.py</code>, <code>web/routes.py</code>, <code>web/static/js/chat.js</code><br>
+                        <strong>This task is optional.</strong> Complete it for bonus points if you finish Tasks 1.1–1.3 early.</p>
+
+                        <h3>Background</h3>
+                        <p>The current implementation waits for the entire LLM response before sending it to the browser. For longer responses, this creates a poor user experience — the user stares at a loading spinner for several seconds. Streaming delivers tokens as they are generated, showing text appearing word-by-word.</p>
+                        <p>This uses <strong>Server-Sent Events (SSE)</strong>: the server sends a stream of <code>data:</code> lines, and the browser reads them incrementally.</p>
+
+                        <h3>Instructions</h3>
+
+                        <h4>Step 1: Create a streaming generator in <code>ai/chat.py</code></h4>
+
+                        <p>Find the <code># TODO: Add streaming support</code> comment and add this function:</p>
+
+                        <pre class="orch-code"><code>def generate_response_stream(
+    message: str,
+    history: list,
+    llm_client: LLMClient,
+    system_prompt: str = "You are a helpful assistant."
+):
+    """
+    Generate a streaming chat response.
+
+    Yields text chunks as they are generated by the LLM.
+
+    Args:
+        message: The user's current message.
+        history: Conversation history list.
+        llm_client: Configured LLM client.
+        system_prompt: System message for the assistant.
+
+    Yields:
+        str: Text chunks as they arrive from the LLM.
+    """
+    # Build messages list (same as generate_response)
+    messages = []
+    for msg in history:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": message})
+
+    # Use the LLM client's streaming capability
+    # Note: You may need to check if llm_client supports streaming
+    # For now, simulate streaming by yielding words from a full response:
+    response = llm_client.generate_chat(
+        messages=messages,
+        system_message=system_prompt
+    )
+    
+    # Split response into words and yield them one at a time
+    words = response.text.split(" ")
+    for word in words:
+        yield word + " "</code></pre>
+
+                        <h4>Step 2: Add a streaming endpoint in <code>web/routes.py</code></h4>
+
+                        <p>Add this route after the existing <code>/chat</code> endpoint:</p>
+
+                        <pre class="orch-code"><code>from flask import Response, stream_with_context
+
+@bp.route("/chat/stream", methods=["POST"])
+def chat_stream():
+    """
+    Stream a chat response using Server-Sent Events.
+
+    Accepts JSON: {"message": str, "history": list, "persona": str}
+    Returns: text/event-stream with data: chunks
+    """
+    data = request.get_json()
+    if not data or "message" not in data:
+        return jsonify({"error": "Missing 'message' field"}), 400
+
+    message = data["message"]
+    history = data.get("history", [])
+    persona = data.get("persona", None)
+
+    from ai.chat import generate_response_stream
+    from config import config
+    from ai.models import create_client
+    from ai.prompts import get_system_prompt
+
+    backend = config.get("llm_backend", "ollama")
+    llm_client = create_client(backend, config.get_all())
+
+    if persona:
+        system_prompt = get_system_prompt(persona)
+    else:
+        system_prompt = config.get("system_prompt", "You are a helpful assistant.")
+
+    def generate():
+        for chunk in generate_response_stream(message, history, llm_client, system_prompt):
+            # SSE format: each message is "data: &lt;content&gt;\n\n"
+            yield f"data: {chunk}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )</code></pre>
+
+                        <h4>Step 3: Add client-side streaming in <code>web/static/js/chat.js</code></h4>
+
+                        <p>Add a function that reads from the SSE stream and updates the UI progressively:</p>
+
+                        <pre class="orch-code"><code>async function sendMessageStreaming(message, history) {
+    const response = await fetch('/chat/stream', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message, history})
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullResponse = '';
+
+    while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+        
+        for (const line of lines) {
+            if (line.startsWith('data: ') &amp;&amp; line !== 'data: [DONE]') {
+                const chunk = line.slice(6);  // Remove "data: " prefix
+                fullResponse += chunk;
+                // Update the chat UI with partial response
+                updateAssistantMessage(fullResponse);
+            }
+        }
+    }
+    
+    return fullResponse;
+}</code></pre>
+
+                        <h4>Step 4: Test the streaming endpoint</h4>
+
+                        <pre class="orch-code"><code># Test with curl (you'll see chunks arrive one by one)
+curl -N -X POST http://localhost:8001/chat/stream \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Write a short poem about coding", "history": []}'</code></pre>
+
+                        <p>You should see output like:</p>
+                        <pre class="orch-code"><code>data: In 
+data: the 
+data: quiet 
+data: glow 
+data: of 
+data: screens 
+...
+data: [DONE]</code></pre>
+
+                        <h3>Validation</h3>
+                        <ul>
+                            <li>☐ <code>POST /chat/stream</code> returns <code>Content-Type: text/event-stream</code></li>
+                            <li>☐ Response arrives incrementally (visible in browser DevTools → Network → EventStream tab)</li>
+                            <li>☐ Each chunk is a valid SSE message (<code>data: &lt;text&gt;\n\n</code>)</li>
+                            <li>☐ The stream ends with <code>data: [DONE]\n\n</code></li>
+                            <li>☐ The browser UI updates progressively as tokens arrive (if frontend updated)</li>
+                        </ul>
+                    </article>
+
+                    <article class="orch-section" id="lab-deliverables">
+                        <h2>Deliverables &amp; Grading</h2>
+
+                        <h3>6. Deliverables</h3>
+                        <table class="orch-table">
+                            <thead><tr><th>Item</th><th>Format</th><th>Requirements</th></tr></thead>
+                            <tbody>
+                                <tr><td>Multi-turn chat notes (Task 1.1)</td><td>Report section</td><td>Statelessness observed and explained; client-vs-server memory contrast</td></tr>
+                                <tr><td>Temperature experiment (Task 1.2)</td><td>Comparison table in report</td><td>Same prompt across multiple temperature values, output variance analyzed</td></tr>
+                                <tr><td>Modified <code>ai/prompts.py</code> (Task 1.3)</td><td>Python file</td><td>At least 2 new personas added to <code>PERSONAS</code> dictionary and tested via UI</td></tr>
+                                <tr><td>curl test results (Task 1.4)</td><td>Comparison table in report</td><td>All personas tested via curl, fallback behavior documented</td></tr>
+                                <tr><td>Modified <code>ai/memory.py</code> (Task 1.5)</td><td>Python file</td><td>Message and token-based trimming implemented and tested</td></tr>
+                                <tr><td>Context management analysis (Task 1.5)</td><td>Strategies table + findings in report</td><td>Context window discovered, forgetting point observed, experiments (context overflow, memory trimming, no forgetting) documented</td></tr>
+                                <tr><td>Streaming implementation (Task 1.6, optional)</td><td>Python + JS files</td><td><code>/chat/stream</code> endpoint working with SSE</td></tr>
+                                <tr><td>Lab report section</td><td>PDF/Markdown</td><td>Implementation description, experiment results, reflection answers</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h3>7. Grading Rubric</h3>
+                        <table class="orch-table">
+                            <thead><tr><th>Criterion</th><th>Points</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td>Task 1.1 — Multi-turn chat</td><td>5</td><td>Statelessness observed and explained</td></tr>
+                                <tr><td>Task 1.2 — Temperature</td><td>10</td><td>Experiment run across values, output variance documented</td></tr>
+                                <tr><td>Task 1.3 — System prompts / personas</td><td>20</td><td>At least 2 new personas defined and tested via UI</td></tr>
+                                <tr><td>Task 1.4 — API testing with curl</td><td>15</td><td>All personas tested via curl, comparison table, fallback documented</td></tr>
+                                <tr><td>Task 1.5 — Memory &amp; context management</td><td>40</td><td>Context window discovered, message/token trimming implemented, experiments documented</td></tr>
+                                <tr><td>Code quality &amp; report</td><td>10</td><td>Clean code, thoughtful analysis</td></tr>
+                                <tr><td><strong>Bonus:</strong> Task 1.6 — Streaming</td><td>+20</td><td>SSE endpoint works, incremental delivery verified</td></tr>
+                            </tbody>
+                        </table>
+                    </article>
+                </div>
+            </div>
+        </main>
+        <!-- Tab 2: Chat interface -->
+        <main class="tab-content" id="chat-tab">
+            <div class="chat-layout">
+                <!-- Chat controls bar -->
+                <div class="chat-controls">
+                    <div class="persona-selector">
+                        <label for="persona-select">Persona:</label>
+                        <select id="persona-select" aria-label="Select assistant persona">
+                            <option value="">Default</option>
+                        </select>
+                    </div>
+                    <div class="model-selector">
+                        <label for="model-select">Model:</label>
+                        <select id="model-select" aria-label="Select LLM model">
+                            <option value="Llama-3.2-3B-Instruct-Q4_K_M">Llama-3.2-3B-Instruct-Q4_K_M</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Scrollable conversation history -->
+                <div class="chat-area" id="chat-area" role="log" aria-live="polite" aria-label="Conversation history">
+                    <div class="welcome-message">
+                        <p>Welcome! Type a message below to start chatting.</p>
+                    </div>
+                </div>
+
+                <!-- Input area -->
+                <div class="input-area">
+                    <form id="chat-form" class="input-form" aria-label="Send a message">
+                        <input
+                            type="text"
+                            id="message-input"
+                            class="message-input"
+                            placeholder="Type your message..."
+                            autocomplete="off"
+                            aria-label="Message input"
+                            required
+                        >
+                        <button type="submit" class="send-button" aria-label="Send message">
+                            Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>
