@@ -130,3 +130,61 @@ This is also quite clear. The context window is the amount of tokens the AI can 
 #### If each turn adds ~100-200 tokens, how many turns can fit in a 4096-token context window?
 
 Between 20 and 40 turns can fit in that context windows.
+
+
+
+## Task 1.2
+
+### Prompts
+
+```bash
+curl.exe -s http://localhost:11434/api/generate -d '{
+  "model": "llama3.2:3b",
+  "prompt": "Write one sentence about the future of AI.",
+  "stream": false,
+  "options": {"temperature": 0.0}
+}'
+```
+
+```bash
+curl.exe -s http://localhost:11434/api/generate -d '{
+  "model": "llama3.2:3b",
+  "prompt": "Write one sentence about the future of AI.",
+  "stream": false,
+  "options": {"temperature": 0.7}
+}'
+```
+
+```bash
+curl.exe -s http://localhost:11434/api/generate -d '{
+  "model": "llama3.2:3b",
+  "prompt": "Write one sentence about the future of AI.",
+  "stream": false,
+  "options": {"temperature": 1.5}
+}'
+```
+
+| Temperature | Behavior | Your observation |
+|-------------|----------|------------------|
+| 0.0 | Deterministic — same output every time | The future of AI is expected to be marked by significant advancements in areas such as natural language processing, computer vision, and machine learning, leading to increased automation, improved decision-making, and potentially transformative impacts on various industries and aspects of society. |
+| 0.7 | Balanced creativity — natural-sounding variation | The future of AI holds immense promise, with the potential for widespread adoption in industries such as healthcare, education, and transportation, leading to increased efficiency, productivity, and innovation |
+| 1.5 | High creativity — surprising words, possibly less coherent | As AI continues to advance, it is predicted that we will see the emergence of highly advanced, self-sustaining systems that can learn, adapt, and evolve at an unprecedented scale, potentially revolutionizing numerous industries and transforming the fabric of society. |
+
+### Reflection questions
+
+#### Run temperature 0.0 twice — do you get identical output? Why?
+
+Since 0.0 always will use the most predictable word, it will always give us the same output. So yes, I got identical output.
+
+### At what temperature does the output start becoming incoherent?
+
+I would say somewhere between 1.0 and the 1.5.
+
+#### For a customer service bot, what temperature would you choose and why?
+
+I think I would choose between 0.1 and 0.3. Just because it should still be predictable since it a customer service bot. But on the other hand giving it a little bit of creativity could make the bot more humanlike and less robotic.
+
+#### For a creative writing assistant, what temperature would you choose?
+
+It depends on the type of writing. If its more academic writing, I would choose a lower temperature. But for idea creative writing I think of arounf 0.7 to 1.0 would be good.
+
