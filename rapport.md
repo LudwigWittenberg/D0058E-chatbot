@@ -1,10 +1,15 @@
 # Rapport Lab 1 - Chatbot
 
+## Table of contents
+- [Task 1.1](#task-11)
+- [Task 1.2](#task-12)
+- [Task 1.3](#task-13)
+
 ## Task 1.1
 
-### Step 1
-
 I modified the base promt to include the following instructions: `Return the answer as plain string without any formatting.` This is just to make my work easier, so I don't have to remove the formatting from the answer.
+
+### Step 1
 
 #### Prompt
 
@@ -193,7 +198,7 @@ It depends on the type of writing. If its more academic writing, I would choose 
 
 ![alt text](/img/1.3.png)
 
-## Personas answers to the promt `Explain what recursion is in programming.`
+### Personas answers to the promt `Explain what recursion is in programming.`
 
 <details>
 <summary><b>Default</b></summary>
@@ -510,7 +515,7 @@ In summary, recursion is a powerful technique for solving complex problems by br
 
 #### How many words does an effective system prompt need? Compare a 10-word vs. 100-word prompt.
 
-![10-word vs 100-word prompt](/img/10-100.png)
+![10-word vs 100-word prompt](/img/10vs100.png)
 
 **Prompt:** What’s the best way to invest $10,000 today for long-term growth while managing risk?
 
@@ -523,3 +528,5 @@ From what I see in the personal lab I can still see some things that are connect
 #### Can you make the model refuse to answer certain topics using only the system prompt?
 
 I modified the system prompt to refuse to give investment advice. From what I tested it worked. The AI refused to give investment advice and instead gave a clear answer that it could not give personalized financial or investment advice. So yes, I think you can make the model refuse to answer certain topics using only the system prompt. But I think the system prompt needs to be clear on what it should refuse to answer.
+
+## Task 1.4
