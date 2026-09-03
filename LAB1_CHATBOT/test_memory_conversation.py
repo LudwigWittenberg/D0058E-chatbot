@@ -154,29 +154,7 @@ def main():
         "What is the difference between a stack and a queue?",
         "How does garbage collection work in Python?",
         "Explain the concept of Big O notation with examples.",
-        "What are the SOLID principles in software engineering?",
-        "Qesetion 11",
-        "Qesetion 12",
-        "Qesetion 13",
-        "Qesetion 14",
-        "Qesetion 15",
-        "Qesetion 16",
-        "Qesetion 17",
-        "Qesetion 18",
-        "Qesetion 19",
-        "Qesetion 20",
-        "Qesetion 21",
-        "Qesetion 22",
-        "Qesetion 23",
-        "Qesetion 24",
-        "Qesetion 25",
-        "Qesetion 26",
-        "Qesetion 27",
-        "Qesetion 28",
-        "Qesetion 29",
-        "Qesetion 30"
-        
-        
+        "What are the SOLID principles in software engineering?"
     ]
 
     for i, message in enumerate(filler_messages):

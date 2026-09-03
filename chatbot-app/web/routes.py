@@ -46,7 +46,7 @@ bp = Blueprint("main", __name__)
 # All messages (user + assistant) are stored here.
 # When max_messages is exceeded, oldest messages are dropped.
 # Try changing max_messages to 10 to see forgetting happen faster.
-_memory = ConversationMemory(max_messages=10)
+_memory = ConversationMemory(max_messages=50)
 # _memory = ConversationMemory(max_messages=50)
 
 

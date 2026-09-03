@@ -586,3 +586,223 @@ I did not get any errors or the ai forgetting anything.
 | Sliding window + summary | Older messages get summurized into one bigger message. Which keeps most of the history intact. | Can get big and long chats, preserves history. | Can get a big summury which can fill the whole context window again. | Long conversations. Works with assistens and service bots. | 
 | Importance scoring | Each message gets a relevant and importance score. Only thos with high score are kept to preserve the history. | Only remembers the important things. | What is important and what is not? How can we decide that? | Long taks of works. |
 | RAG over history | We store all the message in a DB converted to vectors. We can then run our new message againd a vector search and find relevant messages from our history that may match our new message. | Good when we dont need to wipe the message history all the time. Could be good for companies with many employees. | Well it requires additional infrastructure as DB with vector search. which also comes with it price. | I think this is good for customer service bots. Especially if we can map similar issues togheter and find solutions to them. | 
+
+### Step 4
+
+**My edits**
+
+```python
+class ConversationMemory:
+"""Manages conversation history with a simple fixed-window strategy.
+
+Messages are stored in a list. When max_messages is exceeded,
+the oldest messages are dropped.
+"""
+
+  def __init__(self, max_messages: int = 50, max_tokens: int = 3000):
+      """
+      Initialize conversation memory.
+
+      Args:
+          max_messages: Maximum number of messages to retain.
+      """
+      self._history: list = []
+      self.max_messages = max_messages
+      self.max_tokens = max_tokens
+
+  def add_message(self, role: str, content: str) -> None:
+      """
+      Add a message to history. Drops oldest if over max_messages.
+
+      Args:
+          role: Message role ("user" or "assistant").
+          content: Message text content.
+      """
+      self._history.append({"role": role, "content": content})
+
+      # Simple trimming: drop oldest messages when limit exceeded
+      #while len(self._history) > self.max_messages:
+          # self._history.pop(0)
+      
+      while self._estimate_tokens(content) > self.max_tokens:
+          self._history.pop(0)
+
+  def _estimate_tokens(self, text: str) -> int:
+    """Estimate token count for a text string.
+
+    Hint: A common approximation for English text is that
+    1 token ≈ 4 characters (or ~0.75 words). You can also
+    use a proper tokenizer like tiktoken for exact counts.
+
+    Args:
+        text: The text to estimate tokens for.
+
+    Returns:
+        Estimated number of tokens.
+    """
+    
+    history_char = 0
+    
+    for message in self._history:
+      history_char += len(message["content"])
+    
+    amount_characters = len(text) + history_char
+    CHARACTER_PER_TOKEN = 4
+    
+    tokens = amount_characters / CHARACTER_PER_TOKEN
+    
+    return tokens
+```
+
+| Turn | Messages in memory | Estimated tokens | Tokens added this turn | Notes |
+|------|--------------------|------------------|------------------------|-------|
+| 1 (fact: name) | 2 | 124 | +124 | Short messages |
+| 5 (fact: deadline) | 10 | 834 | +229 | |
+| 10 (filler: Big O) | 12 | 3179 | +414 | Longer messages |
+| 15 (filler: SOLID) | 4 | 2168 | -1101 | Starts to trimm | 
+| 21 (recall: name) | 6 | 2317 | +149 | Does not remember the name |
+
+<details>
+<summary><b>Complete test results</b></summary>
+```bash
+============================================================
+  Context Memory Test — Lab 1, Task 1.3
+============================================================
+
+Prerequisites:
+  - Server-side memory wired up (Step 1 complete)
+  - Context window: 4096 tokens (queried from server)
+  - Chatbot running at http://localhost:8001
+
+Clearing server memory...
+  Memory cleared.
+
+  max_messages in memory: 50
+
+------------------------------------------------------------
+Phase 1: Planting facts (messages 1-5)
+------------------------------------------------------------
+
+[Message 1] Planting fact: name
+  >>> My name is Alice and I'm a computer science student at LTU.
+  Memory: 2 msgs (max 50) | ~121 tokens | 3.0% of 4096 budget
+
+[Message 2] Planting fact: color
+  >>> My favorite color is purple and my lucky number is 42.
+  Memory: 4 msgs (max 50) | ~234 tokens | 5.7% of 4096 budget
+
+[Message 3] Planting fact: project
+  >>> I'm working on a project about autonomous drones for forest monitoring.
+  Memory: 6 msgs (max 50) | ~413 tokens | 10.1% of 4096 budget
+
+[Message 4] Planting fact: pet
+  >>> I have a cat named Pixel who likes to sit on my keyboard.
+  Memory: 8 msgs (max 50) | ~575 tokens | 14.0% of 4096 budget
+
+[Message 5] Planting fact: deadline
+  >>> My thesis deadline is March 15th and my supervisor is Professor Lindström.
+  Memory: 10 msgs (max 50) | ~769 tokens | 18.8% of 4096 budget
+
+------------------------------------------------------------
+Phase 2: Filling context with unrelated messages (6-10)
+------------------------------------------------------------
+
+[Message 6] Can you explain how binary search works?...
+  Memory: 12 msgs (max 50) | ~1322 tokens | 32.3% of 4096 budget
+
+[Message 7] What is the difference between a stack and a queue...
+  Memory: 14 msgs (max 50) | ~1889 tokens | 46.1% of 4096 budget
+
+[Message 8] How does garbage collection work in Python?...
+  Memory: 16 msgs (max 50) | ~2765 tokens | 67.5% of 4096 budget
+
+[Message 9] Explain the concept of Big O notation with example...
+  Memory: 12 msgs (max 50) | ~3179 tokens | 77.6% of 4096 budget
+
+[Message 10] What are the SOLID principles in software engineer...
+  Memory: 4 msgs (max 50) | ~2168 tokens | 52.9% of 4096 budget
+
+------------------------------------------------------------
+Phase 3: Testing recall of early facts (messages 11-15)
+------------------------------------------------------------
+
+[RECALL TEST 1] What is my name and where do I study?
+  >>> What is my name and where do I study?
+  Bot says: I don't have any information about you, including your name or where you study. I'm a large language model, I don't have the ability to keep track of individual users or their personal information. Ea...
+  Memory: 6 msgs (max 50) | ~2317 tokens | 56.6% of 4096 budget
+  Expected: Alice, LTU
+  ❌ FORGOTTEN: alice, ltu
+
+[RECALL TEST 2] What is my favorite color and lucky number?
+  >>> What is my favorite color and lucky number?
+  Bot says: I don't have any information about you, including your favorite color or lucky number. I'm a large language model, I don't have the ability to keep track of individual users or their personal preferen...
+  Memory: 8 msgs (max 50) | ~2473 tokens | 60.4% of 4096 budget
+  Expected: purple, 42
+  ❌ FORGOTTEN: purple, 42
+
+[RECALL TEST 3] What is my project about?
+  >>> What is my project about?
+  Bot says: I don't have any information about your project. We didn't have a previous conversation about a project, and I don't have the ability to access or remember any information about your projects or activ...
+  Memory: 10 msgs (max 50) | ~2592 tokens | 63.3% of 4096 budget
+  Expected: autonomous drones, forest monitoring
+  ❌ FORGOTTEN: autonomous drones, forest monitoring
+
+[RECALL TEST 4] What is my cat's name?
+  >>> What is my cat's name?
+  Bot says: I don't have any information about your cat. I'm a large language model, I don't have the ability to know about your personal life or pets, including your cat's name. Each time you interact with me, i...
+  Memory: 12 msgs (max 50) | ~2722 tokens | 66.5% of 4096 budget
+  Expected: Pixel
+  ❌ FORGOTTEN: pixel
+
+[RECALL TEST 5] When is my thesis deadline and who is my supervisor?
+  >>> When is my thesis deadline and who is my supervisor?
+  Bot says: I don't have any information about your academic or professional life, including your thesis deadline or supervisor. I'm a large language model, I don't have the ability to access or remember any info...
+  Memory: 14 msgs (max 50) | ~2902 tokens | 70.8% of 4096 budget
+  Expected: March 15th, Professor Lindström
+  ❌ FORGOTTEN: march 15th, professor lindström
+
+============================================================
+  RESULTS SUMMARY
+============================================================
+
+Final memory state: 14 msgs | ~2902 tokens | 70.8% budget used
+
+Recall tests: 0 passed, 5 failed out of 5
+
+Forgotten facts:
+  - What is my name and where do I study? → missed: alice, ltu
+  - What is my favorite color and lucky number? → missed: purple, 42
+  - What is my project about? → missed: autonomous drones, forest monitoring
+  - What is my cat's name? → missed: pixel
+  - When is my thesis deadline and who is my supervisor? → missed: march 15th, professor lindström
+
+This means the context window was too small to hold all messages,
+or max_messages trimmed the early facts from memory.
+
+Next steps:
+  1. Change _memory = ConversationMemory(max_messages=10) in routes.py
+  2. Re-run this script to see forgetting happen sooner
+  3. Implement token-based trimming (Step 4)
+  4. Implement sliding window + summary (Step 5)
+```
+
+</details>
+
+### Question to answer
+
+#### Do all turns add the same number of tokens? Why do some turns add more?
+
+For example a character is not only letters ins alos space, dot and so on. So in some cases there are extra characters which then takes up token space.
+
+#### At which turn did the token budget first cause trimming (messages dropped)?
+
+It was with the Big O question. We dropped from a message memory fron 16 to 12. But we still got more tokens.
+
+#### Compare: a short response ("Yes, I remember") vs. a long one ("Here's a detailed explanation of...") — how many tokens does each add?
+
+The short response taks up around 7.5 tokens while the longer one takes up approximate 25.75 tokens.
+
+#### How does this compare to the max_messages approach where every turn adds exactly 2 messages regardless of length?
+
+This is a better way for both humans and AIs. We have a clear view over the context window so we can store a good amount of history. So were looking more at the content then the actual amoung of messages. We can now store more messages if they have a small amount of tokens. But we can not store as man messages if the amount of tokens is higher.
+

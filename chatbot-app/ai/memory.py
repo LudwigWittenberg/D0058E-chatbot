@@ -21,7 +21,7 @@ class ConversationMemory:
     the oldest messages are dropped.
     """
 
-    def __init__(self, max_messages: int = 50):
+    def __init__(self, max_messages: int = 50, max_tokens: int = 3000):
         """
         Initialize conversation memory.
 
@@ -30,6 +30,7 @@ class ConversationMemory:
         """
         self._history: list = []
         self.max_messages = max_messages
+        self.max_tokens = max_tokens
 
     def add_message(self, role: str, content: str) -> None:
         """
@@ -42,7 +43,10 @@ class ConversationMemory:
         self._history.append({"role": role, "content": content})
 
         # Simple trimming: drop oldest messages when limit exceeded
-        while len(self._history) > self.max_messages:
+        #while len(self._history) > self.max_messages:
+           # self._history.pop(0)
+        
+        while self._estimate_tokens(content) > self.max_tokens:
             self._history.pop(0)
 
     def get_history(self) -> list:
@@ -66,3 +70,29 @@ class ConversationMemory:
     # - Add needs_summarization() method
     # - Add summarize_old_messages(llm_client) method
     # - Keep recent N messages in full, summarize older ones
+    
+    def _estimate_tokens(self, text: str) -> int:
+        """Estimate token count for a text string.
+    
+        Hint: A common approximation for English text is that
+        1 token ≈ 4 characters (or ~0.75 words). You can also
+        use a proper tokenizer like tiktoken for exact counts.
+
+        Args:
+            text: The text to estimate tokens for.
+
+        Returns:
+            Estimated number of tokens.
+        """
+        
+        history_char = 0
+        
+        for message in self._history:
+          history_char += len(message["content"])
+        
+        amount_characters = len(text) + history_char
+        CHARACTER_PER_TOKEN = 4
+        
+        tokens = amount_characters / CHARACTER_PER_TOKEN
+        
+        return tokens
