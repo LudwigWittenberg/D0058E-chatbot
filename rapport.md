@@ -662,129 +662,132 @@ the oldest messages are dropped.
 | 15 (filler: SOLID) | 4 | 2168 | -1101 | Starts to trimm | 
 | 21 (recall: name) | 6 | 2317 | +149 | Does not remember the name |
 
+*As far as I can see my test files dosent include the crypto and http filler questions*
+
 <details>
 <summary><b>Complete test results</b></summary>
-```bash
-============================================================
-  Context Memory Test — Lab 1, Task 1.3
-============================================================
 
-Prerequisites:
-  - Server-side memory wired up (Step 1 complete)
-  - Context window: 4096 tokens (queried from server)
-  - Chatbot running at http://localhost:8001
+<pre>
+  ============================================================
+    Context Memory Test — Lab 1, Task 1.3
+  ============================================================
 
-Clearing server memory...
-  Memory cleared.
+  Prerequisites:
+    - Server-side memory wired up (Step 1 complete)
+    - Context window: 4096 tokens (queried from server)
+    - Chatbot running at http://localhost:8001
 
-  max_messages in memory: 50
+  Clearing server memory...
+    Memory cleared.
 
-------------------------------------------------------------
-Phase 1: Planting facts (messages 1-5)
-------------------------------------------------------------
+    max_messages in memory: 50
 
-[Message 1] Planting fact: name
-  >>> My name is Alice and I'm a computer science student at LTU.
-  Memory: 2 msgs (max 50) | ~121 tokens | 3.0% of 4096 budget
+  ------------------------------------------------------------
+  Phase 1: Planting facts (messages 1-5)
+  ------------------------------------------------------------
 
-[Message 2] Planting fact: color
-  >>> My favorite color is purple and my lucky number is 42.
-  Memory: 4 msgs (max 50) | ~234 tokens | 5.7% of 4096 budget
+  [Message 1] Planting fact: name
+    >>> My name is Alice and I'm a computer science student at LTU.
+    Memory: 2 msgs (max 50) | ~121 tokens | 3.0% of 4096 budget
 
-[Message 3] Planting fact: project
-  >>> I'm working on a project about autonomous drones for forest monitoring.
-  Memory: 6 msgs (max 50) | ~413 tokens | 10.1% of 4096 budget
+  [Message 2] Planting fact: color
+    >>> My favorite color is purple and my lucky number is 42.
+    Memory: 4 msgs (max 50) | ~234 tokens | 5.7% of 4096 budget
 
-[Message 4] Planting fact: pet
-  >>> I have a cat named Pixel who likes to sit on my keyboard.
-  Memory: 8 msgs (max 50) | ~575 tokens | 14.0% of 4096 budget
+  [Message 3] Planting fact: project
+    >>> I'm working on a project about autonomous drones for forest monitoring.
+    Memory: 6 msgs (max 50) | ~413 tokens | 10.1% of 4096 budget
 
-[Message 5] Planting fact: deadline
-  >>> My thesis deadline is March 15th and my supervisor is Professor Lindström.
-  Memory: 10 msgs (max 50) | ~769 tokens | 18.8% of 4096 budget
+  [Message 4] Planting fact: pet
+    >>> I have a cat named Pixel who likes to sit on my keyboard.
+    Memory: 8 msgs (max 50) | ~575 tokens | 14.0% of 4096 budget
 
-------------------------------------------------------------
-Phase 2: Filling context with unrelated messages (6-10)
-------------------------------------------------------------
+  [Message 5] Planting fact: deadline
+    >>> My thesis deadline is March 15th and my supervisor is Professor Lindström.
+    Memory: 10 msgs (max 50) | ~769 tokens | 18.8% of 4096 budget
 
-[Message 6] Can you explain how binary search works?...
-  Memory: 12 msgs (max 50) | ~1322 tokens | 32.3% of 4096 budget
+  ------------------------------------------------------------
+  Phase 2: Filling context with unrelated messages (6-10)
+  ------------------------------------------------------------
 
-[Message 7] What is the difference between a stack and a queue...
-  Memory: 14 msgs (max 50) | ~1889 tokens | 46.1% of 4096 budget
+  [Message 6] Can you explain how binary search works?...
+    Memory: 12 msgs (max 50) | ~1322 tokens | 32.3% of 4096 budget
 
-[Message 8] How does garbage collection work in Python?...
-  Memory: 16 msgs (max 50) | ~2765 tokens | 67.5% of 4096 budget
+  [Message 7] What is the difference between a stack and a queue...
+    Memory: 14 msgs (max 50) | ~1889 tokens | 46.1% of 4096 budget
 
-[Message 9] Explain the concept of Big O notation with example...
-  Memory: 12 msgs (max 50) | ~3179 tokens | 77.6% of 4096 budget
+  [Message 8] How does garbage collection work in Python?...
+    Memory: 16 msgs (max 50) | ~2765 tokens | 67.5% of 4096 budget
 
-[Message 10] What are the SOLID principles in software engineer...
-  Memory: 4 msgs (max 50) | ~2168 tokens | 52.9% of 4096 budget
+  [Message 9] Explain the concept of Big O notation with example...
+    Memory: 12 msgs (max 50) | ~3179 tokens | 77.6% of 4096 budget
 
-------------------------------------------------------------
-Phase 3: Testing recall of early facts (messages 11-15)
-------------------------------------------------------------
+  [Message 10] What are the SOLID principles in software engineer...
+    Memory: 4 msgs (max 50) | ~2168 tokens | 52.9% of 4096 budget
 
-[RECALL TEST 1] What is my name and where do I study?
-  >>> What is my name and where do I study?
-  Bot says: I don't have any information about you, including your name or where you study. I'm a large language model, I don't have the ability to keep track of individual users or their personal information. Ea...
-  Memory: 6 msgs (max 50) | ~2317 tokens | 56.6% of 4096 budget
-  Expected: Alice, LTU
-  ❌ FORGOTTEN: alice, ltu
+  ------------------------------------------------------------
+  Phase 3: Testing recall of early facts (messages 11-15)
+  ------------------------------------------------------------
 
-[RECALL TEST 2] What is my favorite color and lucky number?
-  >>> What is my favorite color and lucky number?
-  Bot says: I don't have any information about you, including your favorite color or lucky number. I'm a large language model, I don't have the ability to keep track of individual users or their personal preferen...
-  Memory: 8 msgs (max 50) | ~2473 tokens | 60.4% of 4096 budget
-  Expected: purple, 42
-  ❌ FORGOTTEN: purple, 42
+  [RECALL TEST 1] What is my name and where do I study?
+    >>> What is my name and where do I study?
+    Bot says: I don't have any information about you, including your name or where you study. I'm a large language model, I don't have the ability to keep track of individual users or their personal information. Ea...
+    Memory: 6 msgs (max 50) | ~2317 tokens | 56.6% of 4096 budget
+    Expected: Alice, LTU
+    ❌ FORGOTTEN: alice, ltu
 
-[RECALL TEST 3] What is my project about?
-  >>> What is my project about?
-  Bot says: I don't have any information about your project. We didn't have a previous conversation about a project, and I don't have the ability to access or remember any information about your projects or activ...
-  Memory: 10 msgs (max 50) | ~2592 tokens | 63.3% of 4096 budget
-  Expected: autonomous drones, forest monitoring
-  ❌ FORGOTTEN: autonomous drones, forest monitoring
+  [RECALL TEST 2] What is my favorite color and lucky number?
+    >>> What is my favorite color and lucky number?
+    Bot says: I don't have any information about you, including your favorite color or lucky number. I'm a large language model, I don't have the ability to keep track of individual users or their personal preferen...
+    Memory: 8 msgs (max 50) | ~2473 tokens | 60.4% of 4096 budget
+    Expected: purple, 42
+    ❌ FORGOTTEN: purple, 42
 
-[RECALL TEST 4] What is my cat's name?
-  >>> What is my cat's name?
-  Bot says: I don't have any information about your cat. I'm a large language model, I don't have the ability to know about your personal life or pets, including your cat's name. Each time you interact with me, i...
-  Memory: 12 msgs (max 50) | ~2722 tokens | 66.5% of 4096 budget
-  Expected: Pixel
-  ❌ FORGOTTEN: pixel
+  [RECALL TEST 3] What is my project about?
+    >>> What is my project about?
+    Bot says: I don't have any information about your project. We didn't have a previous conversation about a project, and I don't have the ability to access or remember any information about your projects or activ...
+    Memory: 10 msgs (max 50) | ~2592 tokens | 63.3% of 4096 budget
+    Expected: autonomous drones, forest monitoring
+    ❌ FORGOTTEN: autonomous drones, forest monitoring
 
-[RECALL TEST 5] When is my thesis deadline and who is my supervisor?
-  >>> When is my thesis deadline and who is my supervisor?
-  Bot says: I don't have any information about your academic or professional life, including your thesis deadline or supervisor. I'm a large language model, I don't have the ability to access or remember any info...
-  Memory: 14 msgs (max 50) | ~2902 tokens | 70.8% of 4096 budget
-  Expected: March 15th, Professor Lindström
-  ❌ FORGOTTEN: march 15th, professor lindström
+  [RECALL TEST 4] What is my cat's name?
+    >>> What is my cat's name?
+    Bot says: I don't have any information about your cat. I'm a large language model, I don't have the ability to know about your personal life or pets, including your cat's name. Each time you interact with me, i...
+    Memory: 12 msgs (max 50) | ~2722 tokens | 66.5% of 4096 budget
+    Expected: Pixel
+    ❌ FORGOTTEN: pixel
 
-============================================================
-  RESULTS SUMMARY
-============================================================
+  [RECALL TEST 5] When is my thesis deadline and who is my supervisor?
+    >>> When is my thesis deadline and who is my supervisor?
+    Bot says: I don't have any information about your academic or professional life, including your thesis deadline or supervisor. I'm a large language model, I don't have the ability to access or remember any info...
+    Memory: 14 msgs (max 50) | ~2902 tokens | 70.8% of 4096 budget
+    Expected: March 15th, Professor Lindström
+    ❌ FORGOTTEN: march 15th, professor lindström
 
-Final memory state: 14 msgs | ~2902 tokens | 70.8% budget used
+  ============================================================
+    RESULTS SUMMARY
+  ============================================================
 
-Recall tests: 0 passed, 5 failed out of 5
+  Final memory state: 14 msgs | ~2902 tokens | 70.8% budget used
 
-Forgotten facts:
-  - What is my name and where do I study? → missed: alice, ltu
-  - What is my favorite color and lucky number? → missed: purple, 42
-  - What is my project about? → missed: autonomous drones, forest monitoring
-  - What is my cat's name? → missed: pixel
-  - When is my thesis deadline and who is my supervisor? → missed: march 15th, professor lindström
+  Recall tests: 0 passed, 5 failed out of 5
 
-This means the context window was too small to hold all messages,
-or max_messages trimmed the early facts from memory.
+  Forgotten facts:
+    - What is my name and where do I study? → missed: alice, ltu
+    - What is my favorite color and lucky number? → missed: purple, 42
+    - What is my project about? → missed: autonomous drones, forest monitoring
+    - What is my cat's name? → missed: pixel
+    - When is my thesis deadline and who is my supervisor? → missed: march 15th, professor lindström
 
-Next steps:
-  1. Change _memory = ConversationMemory(max_messages=10) in routes.py
-  2. Re-run this script to see forgetting happen sooner
-  3. Implement token-based trimming (Step 4)
-  4. Implement sliding window + summary (Step 5)
-```
+  This means the context window was too small to hold all messages,
+  or max_messages trimmed the early facts from memory.
+
+  Next steps:
+    1. Change _memory = ConversationMemory(max_messages=10) in routes.py
+    2. Re-run this script to see forgetting happen sooner
+    3. Implement token-based trimming (Step 4)
+    4. Implement sliding window + summary (Step 5)
+</pre>
 
 </details>
 
@@ -806,3 +809,124 @@ The short response taks up around 7.5 tokens while the longer one takes up appro
 
 This is a better way for both humans and AIs. We have a clear view over the context window so we can store a good amount of history. So were looking more at the content then the actual amoung of messages. We can now store more messages if they have a small amount of tokens. But we can not store as man messages if the amount of tokens is higher.
 
+
+### Step 5
+
+routes.py
+```python
+# === NEW: Store both user message and assistant response in memory ===
+# Each turn adds 2 messages — this is why context fills up fast!
+_memory.add_message("user", message)
+_memory.add_message("assistant", result["response"])
+
+if _memory.needs_summarizations():
+    _memory.summarize_old_messages(llm_client)
+```
+
+memory.py
+```python
+def add_message(self, role: str, content: str) -> None:
+    """
+    Add a message to history. Drops oldest if over max_messages.
+
+    Args:
+        role: Message role ("user" or "assistant").
+        content: Message text content.
+    """
+    self._history.append({"role": role, "content": content})
+
+def _estimate_tokens(self, text: str = "") -> int:
+    """Estimate token count for a text string.
+
+    Hint: A common approximation for English text is that
+    1 token ≈ 4 characters (or ~0.75 words). You can also
+    use a proper tokenizer like tiktoken for exact counts.
+
+    Args:
+        text: The text to estimate tokens for.
+
+    Returns:
+        Estimated number of tokens.
+    """
+    
+    history_char = 0
+    
+    for message in self._history:
+      history_char += len(message["content"])
+    
+    amount_characters = len(text) + history_char
+    CHARACTER_PER_TOKEN = 4
+    
+    tokens = amount_characters / CHARACTER_PER_TOKEN
+    
+    return tokens
+
+def needs_summarizations(self, keep_recent: int = 6) -> bool:
+    tokens = self._estimate_tokens()
+    return tokens > self.max_tokens and len(self._history) > keep_recent
+    
+def summarize_old_messages(self, llm_client) -> str:
+    arr = self._history.copy()
+    
+    # The recent comments comes first
+    arr.reverse()
+    
+    recent_messages: list = []
+    
+    for _ in range(6):
+        value = arr.pop(0)
+        recent_messages.append(value)
+        
+    
+    old_messages = []
+    
+    for message in arr:
+        string = f"{message["role"]}: {message["content"]}"
+        
+        old_messages.append(string)
+    
+    PROMPT = f"Summaraize this messages, preserve key facts. The messages are build on the role then the content. Messages to summarize: {old_messages}"
+
+    
+    summary = llm_client.generate(prompt=PROMPT)
+    
+    summary_json = {"role": "system", "content": f"[Conversation summary]: {summary}"}
+    
+    self._history.clear()
+    self._history.append(summary_json)
+    
+    print("Summarized")
+    print(self._history)
+    
+    return summary
+```
+
+| Turn | Messages in memory | Estimated tokens | Tokens added this turn | Summary cost | Notes |
+|------|--------------------|------------------|------------------------|--------------|-------|
+| 1 (fact: name) | 2 | 102 | +102 | 0 | Short messages |
+| 5 (fact: deadline) | 10 | 803 | +191 | 0 | |
+| 10 (filler: Big O) | 1 | 790 | -2346 | 497 | First summarization |
+| 15 (filler: SOLID) | 3 | 1799 | +1009 | 0 | Continued on the conversation | 
+| 21 (recall: name) | 5 | 1810 | +1011 | 0 | Remembers everything but not the professor lindstöm. This is flakey since we can controll what the llm summarize |
+
+*As far as I can see my test files dosent include the crypto and http filler questions*
+
+#### Question to answer
+
+##### At which turn did summarization first trigger? How much did token count drop?
+
+It triggerd on the Big O turn. It dropped about 2.3k tokens by summarize the history.
+
+##### How many extra tokens did the summarization LLM call consume? (This is the "cost" of preserving facts) 
+
+##### After summarization, did the token count start growing again?
+
+Yes they started to go up again as normal. Now they did not start at 0 ofcourse since it has the summary in the memory as well.
+
+##### Compare total token overhead: token trimming uses 0 extra tokens, summarization uses ~X extra tokens — but preserves facts. Is the trade-off worth it?
+
+From my run it cost 497. I thinks its better to compare the effect/outcome of which type instead. With trimming we still dont remember the oldest comments. Thats a guarantee if we we have a long and big history. But with summarization we have a change that the LLM summarize old messages. So with that I think the trade off i worth doing. 
+
+##### Were all 5 recall tests passed? Compare with test_memory_conversation.py and test_token_trimming.py.
+
+There were only one that failed and it was the one with the proffessonr lindstöm on the conversation.py. That failed with the summary version. But as I said before I think this version can be flaky since we cant decide what to keep and what to not keep.

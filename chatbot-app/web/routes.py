@@ -226,6 +226,9 @@ def chat():
         # Each turn adds 2 messages — this is why context fills up fast!
         _memory.add_message("user", message)
         _memory.add_message("assistant", result["response"])
+        
+        if _memory.needs_summarizations():
+            _memory.summarize_old_messages(llm_client)
 
         # === NEW: Include memory stats in response for monitoring ===
         # The chat.js displays these below each response

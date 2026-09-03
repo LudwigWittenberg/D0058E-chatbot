@@ -1,5 +1,3 @@
-import tiktoken
-
 """
 Conversation memory for the Chatbot App.
 
@@ -23,7 +21,7 @@ class ConversationMemory:
     the oldest messages are dropped.
     """
 
-    def __init__(self, max_messages: int = 50, max_tokens: int = 20):
+    def __init__(self, max_messages: int = 50, max_tokens: int = 30):
         """
         Initialize conversation memory.
 
@@ -43,16 +41,15 @@ class ConversationMemory:
             content: Message text content.
         """
         self._history.append({"role": role, "content": content})
+        
+        # print(self._history)
 
         # Simple trimming: drop oldest messages when limit exceeded
         #while len(self._history) > self.max_messages:
            # self._history.pop(0)
-           
-        print(self._estimate_tokens(content))
         
-        while self._estimate_tokens(content) > self.max_tokens:
-            print("removed tokens")
-            self._history.pop(0)
+        #while self._estimate_tokens(content) > self.max_tokens:
+        #    self._history.pop(0)
 
     def get_history(self) -> list:
         """Return the full conversation history."""
@@ -76,7 +73,7 @@ class ConversationMemory:
     # - Add summarize_old_messages(llm_client) method
     # - Keep recent N messages in full, summarize older ones
     
-    def _estimate_tokens(self, text: str) -> int:
+    def _estimate_tokens(self, text: str ="") -> int:
         """Estimate token count for a text string.
     
         Hint: A common approximation for English text is that
@@ -101,10 +98,64 @@ class ConversationMemory:
         tokens = amount_characters / CHARACTER_PER_TOKEN
         
         return tokens
-      
+
+    def needs_summarizations(self, keep_recent: int = 6) -> bool:
+        tokens = self._estimate_tokens()
+        return tokens > self.max_tokens and len(self._history) > keep_recent
+    
+    def summarize_old_messages(self, llm_client) -> str:
+        arr = self._history.copy()
+        
+        # The recent comments comes first
+        arr.reverse()
+        
+        recent_messages: list = []
+        
+        for _ in range(6):
+            value = arr.pop(0)
+            recent_messages.append(value)
+            
+        
+        old_messages = []
+        
+        for message in arr:
+            string = f"{message["role"]}: {message["content"]}"
+            
+            old_messages.append(string)
+        
+        PROMPT = f"Summaraize this messages, preserve key facts. The messages are build on the role then the content. Messages to summarize: {old_messages}"
+    
+        
+        #summary = llm_client.generate(prompt=PROMPT)
+        
+        summary = "Test summary"
+        
+        summary_json = {"role": "system", "content": f"[Conversation summary]: {summary}"}
+        
+        self._history.clear()
+        self._history.append(summary_json)
+        
+        print(self._history)
+        
+        return summary
+        
       
 cm = ConversationMemory()
 
-cm.add_message("user", "Yes, I remember")
-cm.add_message("user", "Here's a detailed explanation of codesquare.")
+def helper(msg):
+    cm.add_message("user", msg)
+    if cm.needs_summarizations():
+        print("SUMMARIZE OLD MESSAGES")
+        cm.summarize_old_messages("llm_client")
+    
+helper("hejsan denna ska bort")
+helper("hejsan")
+helper("hejsan")
+helper("hejsan")
+helper("hejsan")
+helper("hejsan")
+helper("En")
+helper("Två")
+helper("Tre")
+helper("TreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTreTre")
 
