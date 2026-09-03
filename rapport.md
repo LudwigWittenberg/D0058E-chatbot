@@ -541,3 +541,48 @@ I modified the system prompt to refuse to give investment advice. From what I te
 | lawyer | **Recursion: A Programming Technique**\n\nRecursion is a fundamental concept in programming that allows a function or method to call itself repeatedly until it reaches a base case that stops the recursion. | Formal |
 
 ## Task 1.5
+
+### Step 1
+
+| Turn | Message in memmory | Notes |
+|------|-------------------|-------|
+| 0 | 0 | Fresh start |
+| 1 | 2 | Should be 2 (1 user + 1 assistant) |
+| 2 | 4 | Should be 4 |
+| 3 | 6 | Should be 6 |
+| 4 | 8 | Should be 8 — ask bot to recall facts |
+| 5 | 10 | Should be 10 — longer response (detail) |
+
+#### Question
+
+##### Does the message count increase by exactly 2 after each turn? Why?
+
+Yes they increase by 2 after each turn. Because its me and the AI and were having a conversation. I send an message and the AI responds to the message. One question requires one answer.
+
+##### Turn 4 asks the bot to recall facts — does it remember Alice, LTU, and Python?
+
+Yes it remembers Alicem LTU and python. 
+
+##### At this rate, how many turns until you hit max_messages (50)?
+
+I can send 25 messages before we hit the max messages. Because each turn is 2 messages. So 50/2 = 25.
+
+### Step 2
+
+I did not get any errors or the ai forgetting anything.
+
+| Message | AI Response |
+|---------|-------------|
+| 15 | Let me check! Your first message was about yourself, Alice. You introduced yourself as a computer science student at LTU, and then shared some fun facts about your favorite color (purple) and lucky number (42). |
+| 15 | Your first message was about asking a question, but you didn't actually ask a question. Instead, you asked me a series of letters ("Qesetion 11", "Qesetion 12", etc.) without providing any context or question. I apologize for not pointing out the lack of a question earlier! |
+| 30 | I remember! Your first message was "Qesetion 29". You were playing a game with me, using the "Qesetion" letters, and I was responding accordingly. It was a fun and creative way to start our conversation! |
+
+### Step 3
+
+| Strategy | How it works | Pros | Cons | When to use |
+|----------|--------------|------|------|-------------|
+| Fixed window | The model has a strict window of how many messages it can remember. Once the window is full, older messages are dropped from memory. | Simple, easy to understand | Will lose context from the start of the chat. | Simple chat conversations. Simple customer chat bots that only has a fixed set of questions and aswers. |
+| Token-based trimming | Instead of storing amount of messages which we dont know how much of the context window they take. We store the exact amount of availbe context in our window. Theoreticallt we can store more then our fixed context windows. Since each message is counted on the amount of tokens used. But on the other hand we can also store less since each message can be larger. | Manage the context window more. | Complexed and needs to be recalculated on each request. | WHen messages can be of different lenght. | 
+| Sliding window + summary | Older messages get summurized into one bigger message. Which keeps most of the history intact. | Can get big and long chats, preserves history. | Can get a big summury which can fill the whole context window again. | Long conversations. Works with assistens and service bots. | 
+| Importance scoring | Each message gets a relevant and importance score. Only thos with high score are kept to preserve the history. | Only remembers the important things. | What is important and what is not? How can we decide that? | Long taks of works. |
+| RAG over history | We store all the message in a DB converted to vectors. We can then run our new message againd a vector search and find relevant messages from our history that may match our new message. | Good when we dont need to wipe the message history all the time. Could be good for companies with many employees. | Well it requires additional infrastructure as DB with vector search. which also comes with it price. | I think this is good for customer service bots. Especially if we can map similar issues togheter and find solutions to them. | 

@@ -46,7 +46,8 @@ bp = Blueprint("main", __name__)
 # All messages (user + assistant) are stored here.
 # When max_messages is exceeded, oldest messages are dropped.
 # Try changing max_messages to 10 to see forgetting happen faster.
-_memory = ConversationMemory(max_messages=50)
+_memory = ConversationMemory(max_messages=10)
+# _memory = ConversationMemory(max_messages=50)
 
 
 # ---------------------------------------------------------------------------
@@ -120,22 +121,22 @@ def get_memory_status():
     Shows:
     - How many messages are stored
     - Estimated token count (1 token ≈ 4 characters)
-    - What percentage of the 4096-token budget is used
+    - What percentage of the 2048-token budget is used
     - A preview of each stored message
 
     Use this to watch context grow as you chat!
     """
     history = _memory.get_history()
     total_chars = sum(len(m["content"]) for m in history)
-    # Rough token estimate: 1 token ≈ 4 characters in English
-    estimated_tokens = total_chars // 4
+    # Token estimate: ~1 token per 3 characters for Llama tokenizer
+    estimated_tokens = (total_chars * 10) // 30  # ~3 chars per token for Llama
 
     return jsonify({
         "message_count": len(history),
         "max_messages": _memory.max_messages,
         "total_characters": total_chars,
         "estimated_tokens": estimated_tokens,
-        # Assuming 4096-token context window (set via num_ctx)
+        # Assuming 2048-token context window (set via num_ctx)
         "context_budget": 4096,
         "budget_used_pct": round(estimated_tokens / 4096 * 100, 1),
         # Preview of each message (truncated for readability)
@@ -144,7 +145,7 @@ def get_memory_status():
                 "role": m["role"],
                 "content": m["content"][:80] + ("..." if len(m["content"]) > 80 else ""),
                 "chars": len(m["content"]),
-                "est_tokens": len(m["content"]) // 4,
+                "est_tokens": (len(m["content"]) * 10) // 30,
             }
             for m in history
         ],
@@ -230,7 +231,7 @@ def chat():
         # The chat.js displays these below each response
         current_history = _memory.get_history()
         total_chars = sum(len(m["content"]) for m in current_history)
-        estimated_tokens = total_chars // 4
+        estimated_tokens = (total_chars * 10) // 30  # ~3 chars per token for Llama
 
         result["memory_stats"] = {
             "messages_in_memory": len(current_history),
