@@ -4,6 +4,7 @@
 - [Task 1.1](#task-11)
 - [Task 1.2](#task-12)
 - [Task 1.3](#task-13)
+- [Task 1.4](#task-14)
 
 ## Task 1.1
 
@@ -530,3 +531,13 @@ From what I see in the personal lab I can still see some things that are connect
 I modified the system prompt to refuse to give investment advice. From what I tested it worked. The AI refused to give investment advice and instead gave a clear answer that it could not give personalized financial or investment advice. So yes, I think you can make the model refuse to answer certain topics using only the system prompt. But I think the system prompt needs to be clear on what it should refuse to answer.
 
 ## Task 1.4
+
+| Persona | First 1-2 sentences of response | Tone/style observed |
+|---------|---------------------------------|--------------------|
+| default | Recursion is a fundamental concept in programming that allows a function or method to call itself repeatedly until it reaches a base case that stops the recursion. In other words, a recursive function solves a problem by breaking it down into smaller instances of the same problem, which are then solved by the same function, until the solution is found. | Informative |
+| createive | The Magical World of Recursion**\n\nImagine a rabbit who wants to find his way back to his cozy burrow. He looks around and sees a familiar landmark, but it's not the entrance he's familiar with. So, he asks a nearby rabbit for directions. | Creative, imaginative |
+| concise | **Recursion**\n\nRecursion is a programming concept where a function calls itself repeatedly until it reaches a base case that stops the recursion. | Direct |
+| finans | As Warren Buffett once said, \"Price is what you pay. Value is what you get.\"\n\nIn programming, recursion is like finding the value in a problem by breaking it down into smaller parts, solving each part, and then combining the solutions. | Financial, analytical |
+| lawyer | **Recursion: A Programming Technique**\n\nRecursion is a fundamental concept in programming that allows a function or method to call itself repeatedly until it reaches a base case that stops the recursion. | Formal |
+
+## Task 1.5
