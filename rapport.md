@@ -5,6 +5,7 @@
 - [Task 1.2](#task-12)
 - [Task 1.3](#task-13)
 - [Task 1.4](#task-14)
+- [Task 1.5](#task-15)
 
 ## Task 1.1
 
@@ -579,17 +580,17 @@ I did not get any errors or the ai forgetting anything.
 
 ### Step 3
 
-| Strategy | How it works | Pros | Cons | When to use |
-|----------|--------------|------|------|-------------|
-| Fixed window | The model has a strict window of how many messages it can remember. Once the window is full, older messages are dropped from memory. | Simple, easy to understand | Will lose context from the start of the chat. | Simple chat conversations. Simple customer chat bots that only has a fixed set of questions and aswers. |
-| Token-based trimming | Instead of storing amount of messages which we dont know how much of the context window they take. We store the exact amount of availbe context in our window. Theoreticallt we can store more then our fixed context windows. Since each message is counted on the amount of tokens used. But on the other hand we can also store less since each message can be larger. | Manage the context window more. | Complexed and needs to be recalculated on each request. | WHen messages can be of different lenght. | 
-| Sliding window + summary | Older messages get summurized into one bigger message. Which keeps most of the history intact. | Can get big and long chats, preserves history. | Can get a big summury which can fill the whole context window again. | Long conversations. Works with assistens and service bots. | 
-| Importance scoring | Each message gets a relevant and importance score. Only thos with high score are kept to preserve the history. | Only remembers the important things. | What is important and what is not? How can we decide that? | Long taks of works. |
-| RAG over history | We store all the message in a DB converted to vectors. We can then run our new message againd a vector search and find relevant messages from our history that may match our new message. | Good when we dont need to wipe the message history all the time. Could be good for companies with many employees. | Well it requires additional infrastructure as DB with vector search. which also comes with it price. | I think this is good for customer service bots. Especially if we can map similar issues togheter and find solutions to them. | 
+| Strategy | How it works | Pros | Cons | When to use | Status |
+|----------|--------------|------|------|-------------|--------|
+| Fixed window | The model has a strict window of how many messages it can remember. Once the window is full, older messages are dropped from memory. | Simple, easy to understand | Will lose context from the start of the chat. | Simple chat conversations. Simple customer chat bots that only has a fixed set of questions and aswers. | Implemented |
+| Token-based trimming | Instead of storing amount of messages which we dont know how much of the context window they take. We store the exact amount of availbe context in our window. Theoreticallt we can store more then our fixed context windows. Since each message is counted on the amount of tokens used. But on the other hand we can also store less since each message can be larger. | Manage the context window more. | Complexed and needs to be recalculated on each request. | WHen messages can be of different lenght. | Implemented |
+| Sliding window + summary | Older messages get summurized into one bigger message. Which keeps most of the history intact. | Can get big and long chats, preserves history. | Can get a big summury which can fill the whole context window again. | Long conversations. Works with assistens and service bots. | Implemented |
+| Importance scoring | Each message gets a relevant and importance score. Only thos with high score are kept to preserve the history. | Only remembers the important things. | What is important and what is not? How can we decide that? | Long taks of works. | Not implemented |
+| RAG over history | We store all the message in a DB converted to vectors. We can then run our new message againd a vector search and find relevant messages from our history that may match our new message. | Good when we dont need to wipe the message history all the time. Could be good for companies with many employees. | Well it requires additional infrastructure as DB with vector search. which also comes with it price. | I think this is good for customer service bots. Especially if we can map similar issues togheter and find solutions to them. | Not implemented |
 
 ### Step 4
 
-**My edits**
+**My edits Token based trimming**
 
 ```python
 class ConversationMemory:
@@ -929,4 +930,62 @@ From my run it cost 497. I thinks its better to compare the effect/outcome of wh
 
 ##### Were all 5 recall tests passed? Compare with test_memory_conversation.py and test_token_trimming.py.
 
-There were only one that failed and it was the one with the proffessonr lindstöm on the conversation.py. That failed with the summary version. But as I said before I think this version can be flaky since we cant decide what to keep and what to not keep.
+There were only one that failed and it was the one with the proffessor lindstöm on the conversation.py. That failed with the summary version. But as I said before I think this version can be flaky since we cant decide what to keep and what to not keep.
+
+### Step 6
+
+#### Your model's context window size
+
+The model I used, llama3-2:3b has a context window of 4096 tokens.
+
+#### At what message count the chatbot starts forgetting (empirical test)
+
+The test show that the chatbot starts to forget information at around 9-10. 
+
+#### The strategies table from Step 3 (with the Status column filled in)
+
+I have implemented and tested the Fixed window, Token-based trimming and sliding window + summary. From the once I have tested I thought the summary were the best since there is a change to actual keep the chat history in tact. However it can still forget about some things. 
+
+#### Your token-based trimming implementation and test results
+
+I tried using the package tiktoken but I did not get it to work so decided to use the 1 token is 4 characters. So the first thing I needed to do was to get the actual length of the total amount of characters of the history. Then add the new text message. Now we have the total amount of characters used, to get the tokens I now have to devide by 4 since 4 charachters is one token. Which return the estimated amount of tokens used. Well I also switched the if statment to check agianst the tokens instead of ammount of messages in the method add_message()
+
+#### Your sliding window + summary implementation and whether it preserved key facts
+
+First I removed the token check in the add_message() method, since that will fail our new implementation with the summary. Then we need a function to check if we need to summarize the context window. needs_summarization returns a boolean value based if it the context window needs to be resetted or not. I added the parameter keep_recent since it was written that AND more that 6 messages. So I figured its best to add here to this method. So we now check tokens and then if we have more than 6 recent messages.
+
+the summarize_old_messages does a copy of the history, then we remove the 6 recent messages we want to keep. Then I send the messages that needs to be summarized to the llm. The last step is to clear the old history and append the summary and the recent messages.
+
+Well it preserved most of the facts. As I stated before we cant controll everything it saves but we got most of it.
+
+#### Which strategy you'd recommend for a production chatbot and why
+
+Of those I tested I would recommend the summary because we still have most of the content from the history left. But I also think the token based could be good for clear AI chats with options. Like what do you want to do.
+
+## Results to save
+
+| Type | Context window |
+|------|----------------|
+| Fixed | 2902 |
+| Token based | 2317 |
+| Summarization | 1810 |
+
+
+
+## Reflection questions
+
+### Why is token-based trimming better than message-count trimming? 
+
+Since we cant controll and we dont know the size of each message. With a message counting we can only store the X amount of last messages. But with token based we can store more. Since a message can inlcude low tokens. For example 20 messages with small context will take up the whole fixed windows directly. But with token based it may only take up about 60%. Which I can then store more messages in. 
+
+### If you summarize old messages, how do you ensure the summary doesn't hallucinate?
+
+By writing to promt to only include facts from the actual chat.
+
+### A customer says "My order number is 12345" in message 3. How would you ensure the bot remembers this in message 50?
+
+I see it in two different ways. Either we can clearly state to the llm to store the order_number. But that may be risky since we cant controll what the llm actually does. Other than that we can store it seperatly and an own contant, in this way we know if we have it we can use it and it will never change.
+
+### What's the trade-off between keeping more history (better context) and leaving room for the LLM's response?
+
+The trade off is that we use more of the availbe context window. If we use the context window to summarize the history we have less tokens to spend on the response. Therefor its important to balance the summary and the context window size. 

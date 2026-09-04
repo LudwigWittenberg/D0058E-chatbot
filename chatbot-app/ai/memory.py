@@ -132,6 +132,9 @@ class ConversationMemory:
         self._history.clear()
         self._history.append(summary_json)
         
+        for message in recent_messages:
+            self._history.append(message)
+        
         print(self._estimate_tokens())
         print("Summarized")
         print(self._history)
