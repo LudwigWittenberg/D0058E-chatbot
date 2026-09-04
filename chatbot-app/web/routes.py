@@ -26,7 +26,7 @@ WHAT CHANGED (compared to routes_old.py):
 import sys
 from pathlib import Path
 
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, Response, stream_with_context
 
 # Ensure shared module is importable
 _app_root = Path(__file__).resolve().parent.parent
@@ -408,3 +408,47 @@ def test_connection():
         return jsonify({"status": "error", "backend": backend_name, "model": model_name, "message": e.reason})
     except Exception as e:
         return jsonify({"status": "error", "backend": backend_name, "model": model_name, "message": str(e)})
+
+@bp.route("/chat/stream", methods=["POST"])
+def chat_stream():
+    """
+    Stream a chat response using Server-Sent Events.
+
+    Accepts JSON: {"message": str, "history": list, "persona": str}
+    Returns: text/event-stream with data: chunks
+    """
+    data = request.get_json()
+    if not data or "message" not in data:
+        return jsonify({"error": "Missing 'message' field"}), 400
+
+    message = data["message"]
+    history = data.get("history", [])
+    persona = data.get("persona", None)
+
+    from ai.chat import generate_response_stream
+    from config import config
+    from ai.models import create_client
+    from ai.prompts import get_system_prompt
+
+    backend = config.get("llm_backend", "ollama")
+    llm_client = create_client(backend, config.get_all())
+
+    if persona:
+        system_prompt = get_system_prompt(persona)
+    else:
+        system_prompt = config.get("system_prompt", "You are a helpful assistant.")
+
+    def generate():
+        for chunk in generate_response_stream(message, history, llm_client, system_prompt):
+            # SSE format: each message is "data: <content>\n\n"
+            yield f"data: {chunk}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )

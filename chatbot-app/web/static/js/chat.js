@@ -280,6 +280,88 @@
         }
     }
 
+    async function sendMessageStreaming(message, history) {
+        let newMessage = true
+        const id = Math.floor(Math.random() * 100000).toString()
+        renderMessage("user", message);
+        
+        const indicator = showTypingIndicator();
+
+        const response = await fetch('/chat/stream', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message, history})
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = '';
+
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+
+            const text = decoder.decode(value);
+            const lines = text.split('\n');
+            
+            for (const line of lines) {
+                indicator.remove()
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    const chunk = line.slice(6);  // Remove "data: " prefix
+                    fullResponse += chunk;
+                    // Update the chat UI with partial response
+
+                    console.log(fullResponse)
+                    await updateAssistantMessage(fullResponse, id, newMessage);
+                    newMessage = false
+                }
+            }
+        }
+        
+        return fullResponse;
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+
+    async function updateAssistantMessage(message, id, newDiv) {
+        let messageDiv = ''
+        const role = "Assistant"
+
+
+      
+        
+        if (newDiv) {
+            messageDiv = document.createElement("div")
+            messageDiv.setAttribute("id", id)
+
+            messageDiv.classList.add("message", role);
+
+            const label = document.createElement("div");
+            label.textContent = role
+            label.classList.add("message-label");
+            
+            const bubble = document.createElement("div");
+            bubble.classList.add("message-bubble");
+            bubble.textContent = message
+            
+            messageDiv.appendChild(label);
+            messageDiv.appendChild(bubble);
+            chatArea.appendChild(messageDiv)
+            
+        } else {
+            messageDiv = document.getElementById(id)
+
+            const bubble = messageDiv.querySelector(".message-bubble")
+            bubble.textContent = message;
+
+             await sleep(200);
+
+        }
+    }
+
     // =========================================================================
     // Event handlers (unchanged)
     // =========================================================================
@@ -290,7 +372,8 @@
         const message = messageInput.value.trim();
         if (!message) return;
         messageInput.value = "";
-        sendMessage(message);
+        //sendMessage(message);
+        sendMessageStreaming(message)
     });
 
     // Model selector (informational only in this version)
