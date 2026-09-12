@@ -6,7 +6,7 @@
 - [Task 1.3](#task-13)
 - [Task 1.4](#task-14)
 - [Task 1.5](#task-15)
-- [Task 1.5](#task-16)
+- [Task 1.6](#task-16)
 
 
 
@@ -993,7 +993,7 @@ I see it in two different ways. Either we can clearly state to the llm to store 
 
 The trade off is that we use more of the availbe context window. If we use the context window to summarize the history we have less tokens to spend on the response. Therefor its important to balance the summary and the context window size. 
 
-## 1.6
+## Task 1.6
 
 Ive added the provided code and fixed the web ui to stream the response back to the user workd by work.
 
@@ -1085,6 +1085,4 @@ async function sendMessageStreaming(message, history) {
 
 ### Preview
 
-<video controls>
-  <source src="./img/streaming.mp4" type="video/mp4">
-</video>
+![Preview of streaming](/img/streaming.gif)
